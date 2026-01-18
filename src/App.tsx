@@ -2,9 +2,35 @@ import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ItemList } from './components/ItemList';
 import { AddItem } from './components/AddItem';
+import { Menu } from './components/Menu';
+import { StoreManager } from './components/StoreManager';
+import { useGeolocation, findClosestStore } from './hooks/useGeolocation';
+import { useStore } from './store';
 
 function App() {
     const [height, setHeight] = useState('100dvh');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState<'list' | 'stores'>('list');
+
+    const stores = useStore((state) => state.stores);
+    const currentStore = useStore((state) => state.currentStore);
+    const setCurrentStore = useStore((state) => state.setCurrentStore);
+    const geolocation = useGeolocation();
+
+    // Detect current store based on location
+    useEffect(() => {
+        if (geolocation.latitude && geolocation.longitude && stores.length > 0) {
+            const closestStoreId = findClosestStore(
+                geolocation.latitude,
+                geolocation.longitude,
+                stores
+            );
+
+            if (closestStoreId !== currentStore) {
+                setCurrentStore(closestStoreId);
+            }
+        }
+    }, [geolocation.latitude, geolocation.longitude, stores, currentStore, setCurrentStore]);
 
     useEffect(() => {
         // Visual Viewport API for reliable mobile keyboard handling
@@ -28,17 +54,32 @@ function App() {
         };
     }, []);
 
+    const handleNavigate = (page: 'stores') => {
+        setCurrentPage(page);
+    };
+
     return (
         <div
             style={{ height }}
             className="flex flex-col overflow-hidden bg-zinc-50 dark:bg-black"
         >
             <div className="mx-auto flex w-full max-w-lg flex-1 flex-col bg-white shadow-2xl shadow-zinc-200 dark:bg-zinc-900 dark:shadow-zinc-900/50">
-                <Header />
-                <main className="flex-1 overflow-y-auto overscroll-contain">
-                    <ItemList />
-                </main>
-                <AddItem />
+                <Header onMenuClick={() => setIsMenuOpen(true)} />
+                <Menu
+                    isOpen={isMenuOpen}
+                    onClose={() => setIsMenuOpen(false)}
+                    onNavigate={handleNavigate}
+                />
+                {currentPage === 'list' ? (
+                    <>
+                        <main className="flex-1 overflow-y-auto overscroll-contain">
+                            <ItemList />
+                        </main>
+                        <AddItem />
+                    </>
+                ) : (
+                    <StoreManager onBack={() => setCurrentPage('list')} />
+                )}
             </div>
         </div>
     );

@@ -53,7 +53,7 @@ export function AddItem() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="relative z-50 bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:bg-zinc-900">
+        <form onSubmit={handleSubmit} className="relative z-50 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:bg-zinc-900">
             {/* Suggestions Popup */}
             {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute bottom-full left-0 right-0 mb-2 px-4">
@@ -85,12 +85,12 @@ export function AddItem() {
                     }}
                     onFocus={() => setShowSuggestions(true)}
                     placeholder="Add item..."
-                    className="flex-1 rounded-full border-0 bg-zinc-100 px-6 py-3 text-base outline-none ring-1 ring-inset ring-zinc-200 placeholder:text-zinc-500 focus:ring-2 focus:ring-inset focus:ring-orange-500 dark:bg-zinc-800 dark:text-white dark:ring-zinc-700 dark:focus:ring-orange-500"
+                    className="flex-1 rounded-full border-0 bg-zinc-100 px-6 py-4 text-base outline-none ring-1 ring-inset ring-zinc-200 placeholder:text-zinc-500 focus:ring-2 focus:ring-inset focus:ring-orange-500 dark:bg-zinc-800 dark:text-white dark:ring-zinc-700 dark:focus:ring-orange-500"
                 />
                 <button
                     type="submit"
                     disabled={!name.trim()}
-                    className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all hover:bg-orange-600 disabled:opacity-50 disabled:shadow-none"
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all active:scale-95 active:bg-orange-600 disabled:opacity-50 disabled:shadow-none"
                 >
                     <Plus size={24} strokeWidth={2.5} />
                 </button>

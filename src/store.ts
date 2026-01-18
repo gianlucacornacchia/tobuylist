@@ -1,17 +1,27 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Item } from './types';
+import type { Item, Store, StoreVisit } from './types';
 
 interface AppState {
     items: Item[];
     itemRanks: Record<string, number>;
     itemHistory: string[];
     itemBuyCounts: Record<string, number>;
+    stores: Store[];
+    currentStore: string | null;
+    storeVisits: StoreVisit[];
+    locationPermission: 'granted' | 'denied' | 'prompt';
     addItem: (name: string, category?: string) => void;
     toggleItem: (id: string) => void;
     deleteItem: (id: string) => void;
     clearBought: () => void;
     setItems: (items: Item[]) => void;
+    addStore: (store: Omit<Store, 'id' | 'createdAt'>) => void;
+    updateStore: (id: string, updates: Partial<Store>) => void;
+    deleteStore: (id: string) => void;
+    setCurrentStore: (id: string | null) => void;
+    addStoreVisit: (visit: StoreVisit) => void;
+    setLocationPermission: (permission: 'granted' | 'denied' | 'prompt') => void;
 }
 
 export const useStore = create<AppState>()(
@@ -21,6 +31,10 @@ export const useStore = create<AppState>()(
             itemRanks: {},
             itemHistory: [],
             itemBuyCounts: {},
+            stores: [],
+            currentStore: null,
+            storeVisits: [],
+            locationPermission: 'prompt',
             setItems: (items) => set({ items }),
             addItem: (name, category) =>
                 set((state) => {
@@ -120,6 +134,43 @@ export const useStore = create<AppState>()(
                 set((state) => ({
                     items: state.items.filter((item) => !item.isBought),
                 })),
+            addStore: (store) =>
+                set((state) => ({
+                    stores: [
+                        ...state.stores,
+                        {
+                            ...store,
+                            id: crypto.randomUUID(),
+                            createdAt: Date.now(),
+                        },
+                    ],
+                })),
+            updateStore: (id, updates) =>
+                set((state) => ({
+                    stores: state.stores.map((store) =>
+                        store.id === id ? { ...store, ...updates } : store
+                    ),
+                })),
+            deleteStore: (id) =>
+                set((state) => ({
+                    stores: state.stores.filter((store) => store.id !== id),
+                    currentStore: state.currentStore === id ? null : state.currentStore,
+                })),
+            setCurrentStore: (id) => set({ currentStore: id }),
+            addStoreVisit: (visit) =>
+                set((state) => ({
+                    storeVisits: [...state.storeVisits, visit],
+                    stores: state.stores.map((store) =>
+                        store.id === visit.storeId
+                            ? {
+                                ...store,
+                                visitCount: store.visitCount + 1,
+                                lastVisit: visit.timestamp,
+                            }
+                            : store
+                    ),
+                })),
+            setLocationPermission: (permission) => set({ locationPermission: permission }),
         }),
         {
             name: 'tobuy-storage',
