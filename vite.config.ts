@@ -4,13 +4,14 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+    base: '/tobuylist/',
     plugins: [
         react(),
         VitePWA({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
             manifest: {
-                name: 'ToBuy List',
+                name: 'ToBuy - Shopping List',
                 short_name: 'ToBuy',
                 description: 'Offline-capable grocery shopping list',
                 theme_color: '#ffffff',

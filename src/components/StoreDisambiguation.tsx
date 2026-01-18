@@ -1,6 +1,5 @@
 import { MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '../store';
 import type { Store } from '../types';
 
 interface StoreDisambiguationProps {
