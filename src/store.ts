@@ -28,6 +28,7 @@ interface AppState {
     setLocationPermission: (permission: 'granted' | 'denied' | 'prompt') => void;
     setSupabaseConfig: (url: string | null, key: string | null) => void;
     syncWithSupabase: () => Promise<void>;
+    subscribeToSupabase: () => () => void;
 }
 
 export const useStore = create<AppState>()(
@@ -50,6 +51,7 @@ export const useStore = create<AppState>()(
                 const { supabaseUrl, supabaseAnonKey, items: localItems } = get();
                 if (!supabaseUrl || !supabaseAnonKey) return;
 
+                console.log('🔄 Starting Supabase Sync...');
                 set({ isSyncing: true });
                 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -78,11 +80,12 @@ export const useStore = create<AppState>()(
                         order: r.item_order
                     }));
 
-                    // 3. Merging logic: Remote items take precedence, 
-                    // merge with local items that don't exist remotely
+                    // 3. Merging logic: Remote items take precedence
                     const remoteIds = new Set(mappedRemote.map(i => i.id));
                     const localOnly = localItems.filter(i => !remoteIds.has(i.id));
                     const mergedItems = [...mappedRemote, ...localOnly];
+
+                    console.log(`📊 Syncing: ${mappedRemote.length} remote, ${localOnly.length} local-only items.`);
 
                     // 4. Update Remote (Upsert)
                     const { error: upsertError } = await supabase
@@ -98,16 +101,45 @@ export const useStore = create<AppState>()(
 
                     if (upsertError) throw upsertError;
 
-                    // 5. Update local state
+                    console.log('✅ Sync Successful.');
                     set({ items: mergedItems });
                 } catch (error) {
-                    console.error('Supabase Sync failed:', error);
-                    alert('Sync failed. Check your credentials.');
+                    console.error('❌ Supabase Sync failed:', error);
                 } finally {
                     set({ isSyncing: false });
                 }
             },
-            addItem: (name, category) =>
+            subscribeToSupabase: () => {
+                const { supabaseUrl, supabaseAnonKey, syncWithSupabase } = get();
+                if (!supabaseUrl || !supabaseAnonKey) return () => { };
+
+                console.log('📡 Setting up Supabase Realtime subscription...');
+                const supabase = createClient(supabaseUrl, supabaseAnonKey);
+                const channel = supabase
+                    .channel('schema-db-changes')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'items',
+                        },
+                        (payload: any) => {
+                            console.log('🔔 Realtime change detected:', payload.eventType);
+                            // Trigger a full sync when anything changes remotely
+                            syncWithSupabase();
+                        }
+                    )
+                    .subscribe((status: string) => {
+                        console.log('🔌 Subscription status:', status);
+                    });
+
+                return () => {
+                    console.log('📴 Removing Supabase subscription.');
+                    supabase.removeChannel(channel);
+                };
+            },
+            addItem: (name, category) => {
                 set((state) => {
                     const normalizedName = name.trim();
                     const lowerName = normalizedName.toLowerCase();
@@ -162,8 +194,10 @@ export const useStore = create<AppState>()(
                         ],
                         itemHistory: newHistory,
                     };
-                }),
-            toggleItem: (id) =>
+                });
+                get().syncWithSupabase();
+            },
+            toggleItem: (id) => {
                 set((state) => {
                     const item = state.items.find((i) => i.id === id);
                     if (!item) return state;
@@ -196,15 +230,21 @@ export const useStore = create<AppState>()(
                         itemRanks: newRanks,
                         itemBuyCounts: newBuyCounts,
                     };
-                }),
-            deleteItem: (id) =>
+                });
+                get().syncWithSupabase();
+            },
+            deleteItem: (id) => {
                 set((state) => ({
                     items: state.items.filter((item) => item.id !== id),
-                })),
-            clearBought: () =>
+                }));
+                get().syncWithSupabase();
+            },
+            clearBought: () => {
                 set((state) => ({
                     items: state.items.filter((item) => !item.isBought),
-                })),
+                }));
+                get().syncWithSupabase();
+            },
             addStore: (store) =>
                 set((state) => ({
                     stores: [
@@ -256,3 +296,7 @@ export const useStore = create<AppState>()(
         }
     )
 );
+
+if (typeof window !== 'undefined') {
+    (window as any).store = useStore;
+}

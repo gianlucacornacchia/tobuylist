@@ -35,31 +35,42 @@ export function Header({ onMenuClick }: HeaderProps) {
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
-                            ToBuy <span className="text-[10px] font-medium text-orange-400 align-top opacity-50 uppercase tracking-widest">Ready [2026-01-24]</span>
+                            ToBuy <span className="text-[10px] font-medium text-orange-400 align-top opacity-50 uppercase tracking-widest">v2.1 Realtime</span>
                         </h1>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {isConfigured && (
+                    {isConfigured ? (
+                        <>
+                            <button
+                                onClick={() => syncWithSupabase()}
+                                disabled={isSyncing}
+                                className={`p-2 rounded-xl transition-all ${isSyncing
+                                    ? 'bg-zinc-100 text-zinc-400 animate-spin dark:bg-zinc-800'
+                                    : 'bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400'
+                                    }`}
+                                title="Sync now"
+                            >
+                                <RefreshCw size={20} />
+                            </button>
+                            <button
+                                onClick={() => setIsSettingsOpen(true)}
+                                className="p-2 rounded-xl text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-all dark:hover:bg-zinc-800"
+                                title="Sharing Settings"
+                            >
+                                <Settings size={20} />
+                            </button>
+                        </>
+                    ) : (
                         <button
-                            onClick={() => syncWithSupabase()}
-                            disabled={isSyncing}
-                            className={`p-2 rounded-xl transition-all ${isSyncing
-                                ? 'bg-zinc-100 text-zinc-400 animate-spin dark:bg-zinc-800'
-                                : 'bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400'
-                                }`}
+                            onClick={() => setIsSettingsOpen(true)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 active:transform active:scale-95"
                         >
-                            <RefreshCw size={20} />
+                            <Settings size={20} />
+                            <span className="text-xs font-bold uppercase tracking-wider">Sync Setup</span>
                         </button>
                     )}
-                    <button
-                        onClick={() => setIsSettingsOpen(true)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 active:transform active:scale-95"
-                    >
-                        <Settings size={20} />
-                        <span className="text-xs font-bold uppercase tracking-wider">Sync Setup</span>
-                    </button>
                 </div>
             </header>
 

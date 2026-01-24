@@ -17,7 +17,6 @@ function App() {
     const setCurrentStore = useStore((state) => state.setCurrentStore);
     const geolocation = useGeolocation();
 
-    // Detect current store based on location
     useEffect(() => {
         if (geolocation.latitude && geolocation.longitude && stores.length > 0) {
             const closestStoreId = findClosestStore(
@@ -31,6 +30,25 @@ function App() {
             }
         }
     }, [geolocation.latitude, geolocation.longitude, stores, currentStore, setCurrentStore]);
+
+    // Supabase Realtime Subscription
+    const supabaseUrl = useStore((state) => state.supabaseUrl);
+    const supabaseAnonKey = useStore((state) => state.supabaseAnonKey);
+    const subscribeToSupabase = useStore((state) => state.subscribeToSupabase);
+    const syncWithSupabase = useStore((state) => state.syncWithSupabase);
+
+    useEffect(() => {
+        if (!supabaseUrl || !supabaseAnonKey) return;
+
+        // Perform initial sync
+        syncWithSupabase();
+
+        // Setup real-time listener
+        const unsubscribe = subscribeToSupabase();
+        return () => {
+            unsubscribe();
+        };
+    }, [supabaseUrl, supabaseAnonKey, subscribeToSupabase, syncWithSupabase]);
 
     useEffect(() => {
         // Visual Viewport API for reliable mobile keyboard handling
