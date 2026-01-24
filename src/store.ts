@@ -51,7 +51,6 @@ export const useStore = create<AppState>()(
                 const { supabaseUrl, supabaseAnonKey, items: localItems } = get();
                 if (!supabaseUrl || !supabaseAnonKey) return;
 
-                console.log('🔄 Starting Supabase Sync...');
                 set({ isSyncing: true });
                 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -85,8 +84,6 @@ export const useStore = create<AppState>()(
                     const localOnly = localItems.filter(i => !remoteIds.has(i.id));
                     const mergedItems = [...mappedRemote, ...localOnly];
 
-                    console.log(`📊 Syncing: ${mappedRemote.length} remote, ${localOnly.length} local-only items.`);
-
                     // 4. Update Remote (Upsert)
                     const { error: upsertError } = await supabase
                         .from('items')
@@ -101,10 +98,9 @@ export const useStore = create<AppState>()(
 
                     if (upsertError) throw upsertError;
 
-                    console.log('✅ Sync Successful.');
                     set({ items: mergedItems });
                 } catch (error) {
-                    console.error('❌ Supabase Sync failed:', error);
+                    console.error('Supabase Sync failed:', error);
                 } finally {
                     set({ isSyncing: false });
                 }
@@ -113,7 +109,6 @@ export const useStore = create<AppState>()(
                 const { supabaseUrl, supabaseAnonKey, syncWithSupabase } = get();
                 if (!supabaseUrl || !supabaseAnonKey) return () => { };
 
-                console.log('📡 Setting up Supabase Realtime subscription...');
                 const supabase = createClient(supabaseUrl, supabaseAnonKey);
                 const channel = supabase
                     .channel('schema-db-changes')
@@ -124,18 +119,14 @@ export const useStore = create<AppState>()(
                             schema: 'public',
                             table: 'items',
                         },
-                        (payload: any) => {
-                            console.log('🔔 Realtime change detected:', payload.eventType);
+                        () => {
                             // Trigger a full sync when anything changes remotely
                             syncWithSupabase();
                         }
                     )
-                    .subscribe((status: string) => {
-                        console.log('🔌 Subscription status:', status);
-                    });
+                    .subscribe();
 
                 return () => {
-                    console.log('📴 Removing Supabase subscription.');
                     supabase.removeChannel(channel);
                 };
             },
@@ -297,6 +288,4 @@ export const useStore = create<AppState>()(
     )
 );
 
-if (typeof window !== 'undefined') {
-    (window as any).store = useStore;
-}
+// End of store
