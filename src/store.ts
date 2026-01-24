@@ -62,7 +62,14 @@ export const useStore = create<AppState>()(
                     if (fetchError) throw fetchError;
 
                     // 2. Map snake_case to camelCase
-                    const mappedRemote: Item[] = (remoteItems || []).map(r => ({
+                    const mappedRemote: Item[] = (remoteItems || []).map((r: {
+                        id: string;
+                        name: string;
+                        is_bought: boolean;
+                        category?: string;
+                        created_at: number;
+                        item_order: number;
+                    }) => ({
                         id: r.id,
                         name: r.name,
                         isBought: r.is_bought,
