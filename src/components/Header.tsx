@@ -35,7 +35,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
-                            ToBuy <span className="text-[10px] font-medium text-orange-400 align-top opacity-50">v2</span>
+                            ToBuy <span className="text-[10px] font-medium text-orange-400 align-top opacity-50 uppercase tracking-widest">Ready [2026-01-24]</span>
                         </h1>
                     </div>
                 </div>
@@ -58,7 +58,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                         className="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 active:transform active:scale-95"
                     >
                         <Settings size={20} />
-                        <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Sync Setup</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">Sync Setup</span>
                     </button>
                 </div>
             </header>
