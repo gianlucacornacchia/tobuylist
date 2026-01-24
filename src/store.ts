@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { createClient } from '@supabase/supabase-js';
 import type { Item, Store, StoreVisit } from './types';
 
 interface AppState {
@@ -11,6 +12,9 @@ interface AppState {
     currentStore: string | null;
     storeVisits: StoreVisit[];
     locationPermission: 'granted' | 'denied' | 'prompt';
+    supabaseUrl: string | null;
+    supabaseAnonKey: string | null;
+    isSyncing: boolean;
     addItem: (name: string, category?: string) => void;
     toggleItem: (id: string) => void;
     deleteItem: (id: string) => void;
@@ -22,11 +26,13 @@ interface AppState {
     setCurrentStore: (id: string | null) => void;
     addStoreVisit: (visit: StoreVisit) => void;
     setLocationPermission: (permission: 'granted' | 'denied' | 'prompt') => void;
+    setSupabaseConfig: (url: string | null, key: string | null) => void;
+    syncWithSupabase: () => Promise<void>;
 }
 
 export const useStore = create<AppState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             items: [],
             itemRanks: {},
             itemHistory: [],
@@ -35,7 +41,65 @@ export const useStore = create<AppState>()(
             currentStore: null,
             storeVisits: [],
             locationPermission: 'prompt',
+            supabaseUrl: null,
+            supabaseAnonKey: null,
+            isSyncing: false,
             setItems: (items) => set({ items }),
+            setSupabaseConfig: (url, key) => set({ supabaseUrl: url, supabaseAnonKey: key }),
+            syncWithSupabase: async () => {
+                const { supabaseUrl, supabaseAnonKey, items: localItems } = get();
+                if (!supabaseUrl || !supabaseAnonKey) return;
+
+                set({ isSyncing: true });
+                const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+                try {
+                    // 1. Fetch remote items
+                    const { data: remoteItems, error: fetchError } = await supabase
+                        .from('items')
+                        .select('*');
+
+                    if (fetchError) throw fetchError;
+
+                    // 2. Map snake_case to camelCase
+                    const mappedRemote: Item[] = (remoteItems || []).map(r => ({
+                        id: r.id,
+                        name: r.name,
+                        isBought: r.is_bought,
+                        category: r.category,
+                        createdAt: r.created_at,
+                        order: r.item_order
+                    }));
+
+                    // 3. Merging logic: Remote items take precedence, 
+                    // merge with local items that don't exist remotely
+                    const remoteIds = new Set(mappedRemote.map(i => i.id));
+                    const localOnly = localItems.filter(i => !remoteIds.has(i.id));
+                    const mergedItems = [...mappedRemote, ...localOnly];
+
+                    // 4. Update Remote (Upsert)
+                    const { error: upsertError } = await supabase
+                        .from('items')
+                        .upsert(mergedItems.map(i => ({
+                            id: i.id,
+                            name: i.name,
+                            is_bought: i.isBought,
+                            category: i.category,
+                            created_at: i.createdAt,
+                            item_order: i.order
+                        })));
+
+                    if (upsertError) throw upsertError;
+
+                    // 5. Update local state
+                    set({ items: mergedItems });
+                } catch (error) {
+                    console.error('Supabase Sync failed:', error);
+                    alert('Sync failed. Check your credentials.');
+                } finally {
+                    set({ isSyncing: false });
+                }
+            },
             addItem: (name, category) =>
                 set((state) => {
                     const normalizedName = name.trim();
