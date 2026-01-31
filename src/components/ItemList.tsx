@@ -6,12 +6,15 @@ import type { PanInfo } from 'framer-motion';
 
 export function ItemList() {
     const items = useStore((state) => state.items);
+    const currentListId = useStore((state) => state.currentListId);
     const toggleItem = useStore((state) => state.toggleItem);
     const deleteItem = useStore((state) => state.deleteItem);
     const setItems = useStore((state) => state.setItems);
 
+    const listItems = items.filter(i => i.listId === currentListId);
+
     // Sort items: pending items by order, then bought items by createdAt (most recent first)
-    const sortedItems = [...items].sort((a, b) => {
+    const sortedItems = [...listItems].sort((a, b) => {
         // If both are bought or both are pending, sort by their respective criteria
         if (a.isBought === b.isBought) {
             if (a.isBought) {

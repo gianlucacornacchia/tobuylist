@@ -4,11 +4,13 @@ A modern, offline-capable grocery shopping list PWA built with React, TypeScript
 
 ## Features
 
+- **Shared Lists**: Create and share multiple lists with friends and family using simple 6-character codes.
+- **Multiple Lists Support**: Manage different lists for different occasions (e.g., Grocery, Party, Hardware).
 - **Realtime Sync**: Collaborative shopping list with Supabase integration.
 - **Smart Sorting**: Items are sorted based on your purchase history.
 - **Autocomplete**: Quick item entry with suggestions.
 - **PWA support**: Installable on mobile and works offline.
-- **Human-Readable Versioning**: Visible version tracking (v2.2.0) in the app header.
+- **Human-Readable Versioning**: Visible version tracking (v2.3.0) in the app header.
 
 ## Scripts
 

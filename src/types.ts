@@ -1,5 +1,13 @@
+export interface List {
+    id: string;
+    name: string;
+    shareCode?: string;
+    createdAt: number;
+}
+
 export interface Item {
     id: string;
+    listId: string; // items ensuring they belong to a list
     name: string;
     isBought: boolean;
     category?: string;

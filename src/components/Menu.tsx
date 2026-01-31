@@ -1,5 +1,6 @@
 import { X, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ListManager } from './ListManager';
 
 interface MenuProps {
     isOpen: boolean;
@@ -42,13 +43,17 @@ export function Menu({ isOpen, onClose, onNavigate }: MenuProps) {
                         </div>
 
                         {/* Menu Items */}
-                        <nav className="p-2">
+                        <div className="flex-1 overflow-y-auto p-4">
+                            <ListManager />
+
+                            <div className="my-4 h-px bg-zinc-100 dark:bg-zinc-800" />
+
                             <button
                                 onClick={() => {
                                     onNavigate('stores');
                                     onClose();
                                 }}
-                                className="flex w-full items-center gap-3 rounded-lg p-4 text-left transition-all active:scale-95 active:bg-zinc-100 dark:active:bg-zinc-800"
+                                className="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-all active:scale-95 active:bg-zinc-100 dark:active:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                             >
                                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
                                     <MapPin size={20} />
@@ -62,7 +67,7 @@ export function Menu({ isOpen, onClose, onNavigate }: MenuProps) {
                                     </div>
                                 </div>
                             </button>
-                        </nav>
+                        </div>
                     </motion.div>
                 </>
             )}

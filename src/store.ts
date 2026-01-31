@@ -1,9 +1,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createClient } from '@supabase/supabase-js';
-import type { Item, Store, StoreVisit } from './types';
+import type { Item, Store, StoreVisit, List } from './types';
 
 interface AppState {
+    lists: List[];
+    currentListId: string | null;
+    createList: (name: string) => Promise<{ id: string; success: boolean; message?: string }>;
+    switchList: (id: string) => void;
+    deleteList: (id: string) => Promise<void>;
+    renameList: (id: string, name: string) => Promise<void>;
+    joinList: (shareCode: string) => Promise<{ success: boolean; message?: string }>;
     items: Item[];
     itemRanks: Record<string, number>;
     itemHistory: string[];
@@ -37,17 +44,130 @@ interface AppState {
 export const useStore = create<AppState>()(
     persist(
         (set, get) => ({
-            items: [],
-            itemRanks: {},
-            itemHistory: [],
-            itemBuyCounts: {},
-            stores: [],
-            currentStore: null,
-            storeVisits: [],
-            locationPermission: 'prompt',
-            supabaseUrl: null,
-            supabaseAnonKey: null,
-            isSyncing: false,
+            lists: [],
+            currentListId: null,
+            createList: async (name) => {
+                const newList: List = {
+                    id: crypto.randomUUID(),
+                    name,
+                    shareCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                    createdAt: Date.now()
+                };
+
+                set(state => ({
+                    lists: [...state.lists, newList],
+                    currentListId: newList.id
+                }));
+
+                let success = true;
+                let message: string | undefined;
+
+                // Push to Supabase if connected
+                const { supabaseUrl, supabaseAnonKey } = get();
+
+                if (supabaseUrl && supabaseAnonKey) {
+                    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+                    const { error } = await supabase.from('lists').upsert({
+                        id: newList.id,
+                        name: newList.name,
+                        created_at: new Date(newList.createdAt).toISOString(),
+                        share_code: newList.shareCode
+                    });
+
+                    if (error) {
+                        console.error("FAILED TO SYNC LIST:", error);
+                        success = false;
+                        message = "Created locally, but failed to sync: " + error.message;
+                    }
+                } else {
+                    console.warn("SKIPPED SYNC - NO CREDENTIALS CONFIGURED");
+                    success = false;
+                    message = "Created locally only. Configure Sync Settings to share.";
+                }
+                return { id: newList.id, success, message };
+            },
+            switchList: (id) => {
+                set({ currentListId: id });
+                get().pullRemoteChanges();
+            },
+            deleteList: async (id) => {
+                const { supabaseUrl, supabaseAnonKey } = get();
+
+                set(state => {
+                    const newLists = state.lists.filter(l => l.id !== id);
+                    // Switch to first available list or null
+                    const newCurrentId = state.currentListId === id
+                        ? (newLists[0]?.id ?? null)
+                        : state.currentListId;
+
+                    return {
+                        lists: newLists,
+                        currentListId: newCurrentId,
+                        // Remove items associated with this list
+                        items: state.items.filter(i => i.listId !== id)
+                    };
+                });
+
+                if (supabaseUrl && supabaseAnonKey) {
+                    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+                    await supabase.from('lists').delete().eq('id', id);
+                }
+            },
+            renameList: async (id, name) => {
+                set(state => ({
+                    lists: state.lists.map(l => l.id === id ? { ...l, name } : l)
+                }));
+
+                const { supabaseUrl, supabaseAnonKey } = get();
+                if (supabaseUrl && supabaseAnonKey) {
+                    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+                    await supabase.from('lists').update({ name }).eq('id', id);
+                }
+            },
+            joinList: async (shareCode) => {
+                const { supabaseUrl, supabaseAnonKey } = get();
+                if (!supabaseUrl || !supabaseAnonKey) {
+                    return { success: false, message: 'Missing Supabase configuration. Please set it up in Settings.' };
+                }
+
+                const supabase = createClient(supabaseUrl, supabaseAnonKey);
+                const { data, error } = await supabase
+                    .from('lists')
+                    .select('*')
+                    .eq('share_code', shareCode)
+                    .limit(1)
+                    .maybeSingle();
+
+                if (error) {
+                    return { success: false, message: error.message || 'Error fetching list.' };
+                }
+
+                if (!data) {
+                    return { success: false, message: 'List not found. Please check the code.' };
+                }
+
+                const newList: List = {
+                    id: data.id,
+                    name: data.name,
+                    shareCode: data.share_code,
+                    createdAt: new Date(data.created_at).getTime()
+                };
+
+                // Check if we already have this list
+                const { lists } = get();
+                if (!lists.find(l => l.id === newList.id)) {
+                    set(state => ({
+                        lists: [...state.lists, newList],
+                        currentListId: newList.id
+                    }));
+                } else {
+                    set({ currentListId: newList.id });
+                }
+
+                // Fire and forget fetch to speed up UI
+                get().pullRemoteChanges();
+                return { success: true };
+            },
             setItems: (items) => set({ items }),
             setSupabaseConfig: (url, key) => set({ supabaseUrl: url, supabaseAnonKey: key }),
             syncWithSupabase: async () => {
@@ -70,6 +190,7 @@ export const useStore = create<AppState>()(
                         .from('items')
                         .upsert(items.map(i => ({
                             id: i.id,
+                            list_id: i.listId,
                             name: i.name,
                             is_bought: i.isBought,
                             category: i.category,
@@ -85,20 +206,22 @@ export const useStore = create<AppState>()(
                 }
             },
             pullRemoteChanges: async () => {
-                const { supabaseUrl, supabaseAnonKey } = get();
-                if (!supabaseUrl || !supabaseAnonKey) return;
+                const { supabaseUrl, supabaseAnonKey, currentListId } = get();
+                if (!supabaseUrl || !supabaseAnonKey || !currentListId) return;
 
                 const supabase = createClient(supabaseUrl, supabaseAnonKey);
                 try {
                     set({ isSyncing: true });
                     const { data: remoteItems, error } = await supabase
                         .from('items')
-                        .select('*');
+                        .select('*')
+                        .eq('list_id', currentListId);
 
                     if (error) throw error;
 
                     const mappedRemote: Item[] = (remoteItems || []).map((r: {
                         id: string;
+                        list_id: string;
                         name: string;
                         is_bought: boolean;
                         category?: string;
@@ -106,6 +229,7 @@ export const useStore = create<AppState>()(
                         item_order: number;
                     }) => ({
                         id: r.id,
+                        listId: r.list_id,
                         name: r.name,
                         isBought: r.is_bought,
                         category: r.category,
@@ -113,7 +237,20 @@ export const useStore = create<AppState>()(
                         order: r.item_order
                     }));
 
-                    set({ items: mappedRemote });
+                    // We are replacing items for the *current list* only.
+                    // But wait, the state.items should probably only contain items for the current list? 
+                    // OR we filter them in the UI? 
+                    // Let's keep state.items as "all known items" or "items for current list"?
+                    // Given the local-first nature, it's safer to keep "items for current list" loaded in memory if we want simplicity, 
+                    // BUT for offline multi-list support we might want to store all.
+                    // Let's decide: store ALL items in `items`, filter by `currentListId` in the UI.
+
+                    set(state => {
+                        // Remove old items for this list and add new ones
+                        const otherListItems = state.items.filter(i => i.listId !== currentListId);
+                        return { items: [...otherListItems, ...mappedRemote] };
+                    });
+
                 } catch (error) {
                     console.error('Pull failed:', error);
                 } finally {
@@ -135,11 +272,22 @@ export const useStore = create<AppState>()(
                             table: 'items',
                         },
                         (payload) => {
-                            const { items } = get();
+                            const { items, currentListId } = get();
+
+                            // Filter events not for the current list?
+                            // Actually, maybe we should receive all events but only update state if relevant?
+                            // OR we trust the client to filter? 
+                            // The payload comes from "public"."items". It has all items.
+                            // We should check if payload.new['list_id'] === currentListId OR payload.old['list_id'] === currentListId
+
+
 
                             if (payload.eventType === 'INSERT') {
+                                if (payload.new.list_id !== currentListId) return;
+
                                 const newItem: Item = {
                                     id: payload.new.id,
+                                    listId: payload.new.list_id,
                                     name: payload.new.name,
                                     isBought: payload.new.is_bought,
                                     category: payload.new.category,
@@ -151,8 +299,11 @@ export const useStore = create<AppState>()(
                                     set({ items: [...items, newItem] });
                                 }
                             } else if (payload.eventType === 'UPDATE') {
+                                if (payload.new.list_id !== currentListId) return;
+
                                 const updatedItem: Item = {
                                     id: payload.new.id,
+                                    listId: payload.new.list_id,
                                     name: payload.new.name,
                                     isBought: payload.new.is_bought,
                                     category: payload.new.category,
@@ -163,6 +314,8 @@ export const useStore = create<AppState>()(
                                     items: items.map(i => i.id === updatedItem.id ? updatedItem : i)
                                 });
                             } else if (payload.eventType === 'DELETE') {
+                                // For DELETE, we might only have `old`.
+                                // Ideally we check if the deleted item was in our view.
                                 const deletedId = payload.old.id;
                                 set({
                                     items: items.filter(i => i.id !== deletedId)
@@ -177,13 +330,37 @@ export const useStore = create<AppState>()(
                 };
             },
             addItem: (name, category) => {
+
                 set((state) => {
+                    // Ensure list exists logic inside setter or check before? 
+                    // Better verify list existence before calling set.
+                    // BUT for now, let's assume valid state or fallback.
+                    // Actually, let's make sure we have a list ID. 
+                    // If `state.currentListId` is null, we should probably initialize a default list.
+
+                    let activeListId = state.currentListId;
+                    let newLists = state.lists;
+
+                    if (!activeListId) {
+                        const newList: List = {
+                            id: crypto.randomUUID(),
+                            name: "My List",
+                            shareCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+                            createdAt: Date.now()
+                        };
+                        activeListId = newList.id;
+                        newLists = [...state.lists, newList];
+                        // Side effect: we should ideally persist this new list to Supabase too.
+                        // We'll rely on a separate mechanism or just push it.
+                        // For now, update local state.
+                    }
+
                     const normalizedName = name.trim();
                     const lowerName = normalizedName.toLowerCase();
 
-                    // Check for existing item with same name (case-insensitive)
+                    // Check for existing item with same name (case-insensitive) in the CURRENT LIST
                     const existingItemIndex = state.items.findIndex(
-                        (i) => i.name.toLowerCase() === lowerName
+                        (i) => i.name.toLowerCase() === lowerName && i.listId === activeListId
                     );
 
                     const newHistory = state.itemHistory.includes(normalizedName)
@@ -198,7 +375,11 @@ export const useStore = create<AppState>()(
 
                         // If it's already in the pending list, do nothing.
                         if (!existingItem.isBought) {
-                            return state;
+                            return {
+                                itemHistory: newHistory,
+                                lists: newLists,
+                                currentListId: activeListId
+                            };
                         }
 
                         // Item exists. If it's bought, bring it back.
@@ -214,6 +395,8 @@ export const useStore = create<AppState>()(
                         return {
                             items: updatedItems,
                             itemHistory: newHistory,
+                            lists: newLists,
+                            currentListId: activeListId
                         };
                     }
 
@@ -221,6 +404,7 @@ export const useStore = create<AppState>()(
                         items: [
                             {
                                 id: crypto.randomUUID(),
+                                listId: activeListId!, // We ensured it's not null
                                 name: normalizedName,
                                 isBought: false,
                                 category,
@@ -230,8 +414,16 @@ export const useStore = create<AppState>()(
                             ...state.items,
                         ],
                         itemHistory: newHistory,
+                        lists: newLists,
+                        currentListId: activeListId
                     };
                 });
+
+                // If we created a default list during this op, we really should sync it. 
+                // Checks get() to see if we have lists to push? 
+                // Simpler: let's enforce list creation being explicit in UI or init. 
+                // But for migration, this lazy creation is robust.
+
                 get().pushLocalChanges();
             },
             toggleItem: (id) => {

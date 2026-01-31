@@ -9,10 +9,12 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-    const { supabaseUrl, supabaseAnonKey, setSupabaseConfig, syncWithSupabase, isSyncing } = useStore();
+    const { supabaseUrl, supabaseAnonKey, setSupabaseConfig, syncWithSupabase, isSyncing, lists, currentListId } = useStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [tempUrl, setTempUrl] = useState(supabaseUrl || '');
     const [tempKey, setTempKey] = useState(supabaseAnonKey || '');
+
+    const currentListName = lists.find(l => l.id === currentListId)?.name || 'My List';
 
     const handleSave = () => {
         setSupabaseConfig(tempUrl, tempKey);
@@ -37,7 +39,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
-                            ToBuy <span className="text-[10px] font-medium text-orange-400 align-top opacity-50 uppercase tracking-widest">
+                            {currentListName} <span className="text-[10px] font-medium text-orange-400 align-top opacity-50 uppercase tracking-widest">
                                 v{typeof APP_VERSION !== 'undefined' ? APP_VERSION : '2.2.0'}
                             </span>
                         </h1>
