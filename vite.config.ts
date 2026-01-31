@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import fs from 'node:fs'
+
+const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
+const APP_VERSION = pkg.version
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -32,5 +36,8 @@ export default defineConfig({
     ],
     server: {
         allowedHosts: true
-    }
+    },
+    define: {
+        APP_VERSION: JSON.stringify(APP_VERSION),
+    },
 })

@@ -2,6 +2,8 @@ import { ShoppingBag, Menu, RefreshCw, Settings, Check, X } from 'lucide-react';
 import { useStore } from '../store';
 import { useState } from 'react';
 
+declare const APP_VERSION: string;
+
 interface HeaderProps {
     onMenuClick: () => void;
 }
@@ -35,7 +37,9 @@ export function Header({ onMenuClick }: HeaderProps) {
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
-                            ToBuy <span className="text-[10px] font-medium text-orange-400 align-top opacity-50 uppercase tracking-widest">v2.1 Realtime</span>
+                            ToBuy <span className="text-[10px] font-medium text-orange-400 align-top opacity-50 uppercase tracking-widest">
+                                v{typeof APP_VERSION !== 'undefined' ? APP_VERSION : '2.2.0'}
+                            </span>
                         </h1>
                     </div>
                 </div>
