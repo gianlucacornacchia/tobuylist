@@ -1,73 +1,36 @@
-# React + TypeScript + Vite
+# ToBuy - Shopping List
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, offline-capable grocery shopping list PWA built with React, TypeScript, and Vite, featuring realtime synchronization with Supabase.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Realtime Sync**: Collaborative shopping list with Supabase integration.
+- **Smart Sorting**: Items are sorted based on your purchase history.
+- **Autocomplete**: Quick item entry with suggestions.
+- **PWA support**: Installable on mobile and works offline.
+- **Human-Readable Versioning**: Visible version tracking (v2.2.0) in the app header.
 
-## React Compiler
+## Scripts
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### `npm run dev`
+Starts the development server.
 
-## Expanding the ESLint configuration
+### `npm run build`
+Builds the app for production.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### `npm run deploy`
+Builds and deploys the app directly to GitHub Pages.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### `npm run deploy:safe`
+**Recommendation for Deployment**. Runs the `scripts/deploy.ps1` PowerShell script which ensures:
+1. All changes are committed.
+2. All commits are pushed to the remote repository.
+3. The app is then built and deployed to GitHub Pages.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Development
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Versioning
+The app version is managed in `package.json` and automatically injected into the UI via Vite's `define` configuration.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Deployment Rule
+Before deploying to GitHub Pages, always ensure all changes are committed and pushed to the remote repository to maintain a consistent state between the source code and the live app.
