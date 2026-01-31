@@ -28,6 +28,9 @@ interface AppState {
     setLocationPermission: (permission: 'granted' | 'denied' | 'prompt') => void;
     setSupabaseConfig: (url: string | null, key: string | null) => void;
     syncWithSupabase: () => Promise<void>;
+    fullSync: () => Promise<void>;
+    pushLocalChanges: () => Promise<void>;
+    pullRemoteChanges: () => Promise<void>;
     subscribeToSupabase: () => () => void;
 }
 
@@ -48,21 +51,52 @@ export const useStore = create<AppState>()(
             setItems: (items) => set({ items }),
             setSupabaseConfig: (url, key) => set({ supabaseUrl: url, supabaseAnonKey: key }),
             syncWithSupabase: async () => {
-                const { supabaseUrl, supabaseAnonKey, items: localItems } = get();
+                // Legacy wrapper for backwards compatibility
+                await get().fullSync();
+            },
+            fullSync: async () => {
+                // Push then Pull
+                await get().pushLocalChanges();
+                await get().pullRemoteChanges();
+            },
+            pushLocalChanges: async () => {
+                const { supabaseUrl, supabaseAnonKey, items } = get();
                 if (!supabaseUrl || !supabaseAnonKey) return;
 
-                set({ isSyncing: true });
                 const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
                 try {
-                    // 1. Fetch remote items
-                    const { data: remoteItems, error: fetchError } = await supabase
+                    set({ isSyncing: true });
+                    const { error } = await supabase
+                        .from('items')
+                        .upsert(items.map(i => ({
+                            id: i.id,
+                            name: i.name,
+                            is_bought: i.isBought,
+                            category: i.category,
+                            created_at: i.createdAt,
+                            item_order: i.order
+                        })));
+
+                    if (error) throw error;
+                } catch (error) {
+                    console.error('Push failed:', error);
+                } finally {
+                    set({ isSyncing: false });
+                }
+            },
+            pullRemoteChanges: async () => {
+                const { supabaseUrl, supabaseAnonKey } = get();
+                if (!supabaseUrl || !supabaseAnonKey) return;
+
+                const supabase = createClient(supabaseUrl, supabaseAnonKey);
+                try {
+                    set({ isSyncing: true });
+                    const { data: remoteItems, error } = await supabase
                         .from('items')
                         .select('*');
 
-                    if (fetchError) throw fetchError;
+                    if (error) throw error;
 
-                    // 2. Map snake_case to camelCase
                     const mappedRemote: Item[] = (remoteItems || []).map((r: {
                         id: string;
                         name: string;
@@ -79,34 +113,15 @@ export const useStore = create<AppState>()(
                         order: r.item_order
                     }));
 
-                    // 3. Merging logic: Remote items take precedence
-                    const remoteIds = new Set(mappedRemote.map(i => i.id));
-                    const localOnly = localItems.filter(i => !remoteIds.has(i.id));
-                    const mergedItems = [...mappedRemote, ...localOnly];
-
-                    // 4. Update Remote (Upsert)
-                    const { error: upsertError } = await supabase
-                        .from('items')
-                        .upsert(mergedItems.map(i => ({
-                            id: i.id,
-                            name: i.name,
-                            is_bought: i.isBought,
-                            category: i.category,
-                            created_at: i.createdAt,
-                            item_order: i.order
-                        })));
-
-                    if (upsertError) throw upsertError;
-
-                    set({ items: mergedItems });
+                    set({ items: mappedRemote });
                 } catch (error) {
-                    console.error('Supabase Sync failed:', error);
+                    console.error('Pull failed:', error);
                 } finally {
                     set({ isSyncing: false });
                 }
             },
             subscribeToSupabase: () => {
-                const { supabaseUrl, supabaseAnonKey, syncWithSupabase } = get();
+                const { supabaseUrl, supabaseAnonKey } = get();
                 if (!supabaseUrl || !supabaseAnonKey) return () => { };
 
                 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -119,9 +134,40 @@ export const useStore = create<AppState>()(
                             schema: 'public',
                             table: 'items',
                         },
-                        () => {
-                            // Trigger a full sync when anything changes remotely
-                            syncWithSupabase();
+                        (payload) => {
+                            const { items } = get();
+
+                            if (payload.eventType === 'INSERT') {
+                                const newItem: Item = {
+                                    id: payload.new.id,
+                                    name: payload.new.name,
+                                    isBought: payload.new.is_bought,
+                                    category: payload.new.category,
+                                    createdAt: payload.new.created_at,
+                                    order: payload.new.item_order,
+                                };
+                                // Only add if not already present (local add might have already put it there)
+                                if (!items.find(i => i.id === newItem.id)) {
+                                    set({ items: [...items, newItem] });
+                                }
+                            } else if (payload.eventType === 'UPDATE') {
+                                const updatedItem: Item = {
+                                    id: payload.new.id,
+                                    name: payload.new.name,
+                                    isBought: payload.new.is_bought,
+                                    category: payload.new.category,
+                                    createdAt: payload.new.created_at,
+                                    order: payload.new.item_order,
+                                };
+                                set({
+                                    items: items.map(i => i.id === updatedItem.id ? updatedItem : i)
+                                });
+                            } else if (payload.eventType === 'DELETE') {
+                                const deletedId = payload.old.id;
+                                set({
+                                    items: items.filter(i => i.id !== deletedId)
+                                });
+                            }
                         }
                     )
                     .subscribe();
@@ -186,7 +232,7 @@ export const useStore = create<AppState>()(
                         itemHistory: newHistory,
                     };
                 });
-                get().syncWithSupabase();
+                get().pushLocalChanges();
             },
             toggleItem: (id) => {
                 set((state) => {
@@ -222,19 +268,29 @@ export const useStore = create<AppState>()(
                         itemBuyCounts: newBuyCounts,
                     };
                 });
-                get().syncWithSupabase();
+                get().pushLocalChanges();
             },
             deleteItem: (id) => {
                 set((state) => ({
                     items: state.items.filter((item) => item.id !== id),
                 }));
-                get().syncWithSupabase();
+                const { supabaseUrl, supabaseAnonKey } = get();
+                // Special case for delete: we need to explicitly delete from remote
+                if (supabaseUrl && supabaseAnonKey) {
+                    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+                    supabase.from('items').delete().eq('id', id).then();
+                }
             },
             clearBought: () => {
+                const boughtIds = get().items.filter(i => i.isBought).map(i => i.id);
                 set((state) => ({
                     items: state.items.filter((item) => !item.isBought),
                 }));
-                get().syncWithSupabase();
+                const { supabaseUrl, supabaseAnonKey } = get();
+                if (supabaseUrl && supabaseAnonKey && boughtIds.length > 0) {
+                    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+                    supabase.from('items').delete().in('id', boughtIds).then();
+                }
             },
             addStore: (store) =>
                 set((state) => ({
