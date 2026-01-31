@@ -46,6 +46,17 @@ export const useStore = create<AppState>()(
         (set, get) => ({
             lists: [],
             currentListId: null,
+            items: [],
+            itemRanks: {},
+            itemHistory: [],
+            itemBuyCounts: {},
+            stores: [],
+            currentStore: null,
+            storeVisits: [],
+            locationPermission: 'prompt',
+            supabaseUrl: null,
+            supabaseAnonKey: null,
+            isSyncing: false,
             createList: async (name) => {
                 const newList: List = {
                     id: crypto.randomUUID(),
