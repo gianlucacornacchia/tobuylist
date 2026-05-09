@@ -46,8 +46,8 @@ function App() {
 
         if (su && sk) {
             try {
-                const url = atob(su);
-                const key = atob(sk);
+                const url = atob(su.replace(/ /g, '+'));
+                const key = atob(sk.replace(/ /g, '+'));
                 setSupabaseConfig(url, key);
                 // Clear the URL
                 window.history.replaceState({}, '', window.location.pathname);
