@@ -243,7 +243,7 @@ function QuantityEditor({ item, onChange, isEditing, setIsEditing }: { item: Ite
     };
 
     if (!isEditing) {
-        if (!item.quantity || item.quantity === 1) return null;
+        if (!item.quantity || (item.quantity === 1 && !item.unit)) return null;
 
         return (
             <button 
