@@ -8,9 +8,10 @@ A modern, offline-capable grocery shopping list PWA built with React, TypeScript
 - **Multiple Lists Support**: Manage different lists for different occasions (e.g., Grocery, Party, Hardware).
 - **Realtime Sync**: Collaborative shopping list with Supabase integration.
 - **Smart Sorting**: Items are sorted based on your purchase history.
-- **Autocomplete**: Quick item entry with suggestions.
+- **Quantity & Units**: Track item quantities seamlessly (e.g. `2 Kg`). Adjust them inline via the touch-friendly interface.
+- **Autocomplete & Parsing**: Quick item entry with suggestions. Smart parsing separates quantities from names (e.g., "2 Kg Apples").
 - **PWA support**: Installable on mobile and works offline.
-- **Human-Readable Versioning**: Visible version tracking (v2.3.0) in the app header.
+- **Human-Readable Versioning**: Visible version tracking (e.g., v2.3.4) in the app header.
 
 ## Scripts
 
@@ -32,7 +33,7 @@ Builds and deploys the app directly to GitHub Pages.
 ## Development
 
 ### Versioning
-The app version is managed in `package.json` and automatically injected into the UI via Vite's `define` configuration.
+The app version is managed in `package.json` and directly imported into the UI, ensuring immediate updates without restarting the development server.
 
 ### Deployment Rule
 Before deploying to GitHub Pages, always ensure all changes are committed and pushed to the remote repository to maintain a consistent state between the source code and the live app.

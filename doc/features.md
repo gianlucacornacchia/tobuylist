@@ -11,6 +11,7 @@
         - **Swipe Right**: Mark as bought (Green check).
         - **Swipe Left**: Delete item (Red trash can).
         - **Left Button**: Tap to toggle bought status.
+        - **Quantity Controls**: Adjust item quantities instantly with inline `+` and `-` controls. If the quantity is 1 or empty, the badge hides gracefully but remains accessible by tapping the item name.
         - **Smart Sorting**: Items automatically sort based on the order you last bought them!
     - **Add Item**: 
         - Fixed bottom bar for quick entry.
@@ -19,6 +20,8 @@
             - Long (3+ chars): Matches anywhere in the word.
             - **Smart Sorting**: Frequently bought items appear at the top of the list!
             - **Filtered**: Items already on your "Need to Buy" list won't show up in suggestions.
+            - **Smart Population**: Tapping a suggestion adds it to the text box so you can optionally append a quantity before adding.
+        - **Quantity Parsing**: Easily input quantities alongside names (e.g., "2 Kg Apples" or "Apples 2"). The app will automatically extract the quantity, unit, and item name.
         - **No Duplicates**: Adding an item that's already in the "Bought" list simple brings it back to the top. If it's already pending, nothing happens.
     - **Reorder**: Drag and drop items using the grip icon (⋮) to prioritize your list manually.
 - **Shopping Mode**: Bought items move to the bottom and become dimmed.

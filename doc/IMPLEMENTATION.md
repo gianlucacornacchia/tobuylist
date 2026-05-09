@@ -21,7 +21,11 @@ The app uses a weight-based sorting system. When an item is marked as bought, th
 - **Detection Algorithm**: Uses the Haversine formula to calculate the distance between the user and saved store coordinates.
 - **Disambiguation**: If multiple stores are within their respective detection radii (customizable per store), the app prompts the user to select the correct one via a bottom-sheet dialog.
 
-### 3. PWA & Offline Support
+### 3. Quantity Management
+- **Smart Parsing**: Regular expressions dynamically separate numbers and valid units (`Kg`, `g`, `L`) from user input during the addition phase.
+- **State Integration**: Quantities and units are deeply integrated into the Zustand store and Supabase synchronization logic, utilizing `null` defaults to ensure backward compatibility and prevent backend sync failures if the database schema is outdated.
+
+### 4. PWA & Offline Support
 - **Service Workers**: Managed by `vite-plugin-pwa` for "Offline Ready" functionality.
 - **Persistence**: Zustand's `persist` middleware automatically syncs the application state to `localStorage`.
 - **Safe Area**: Uses CSS `env(safe-area-inset-*)` values to ensure the UI respects notches and home indicators on modern iOS and Android devices.
