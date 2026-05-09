@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.1] - 2026-02-01
+
+### Fixed
+- **Scrolling Issue**: Fixed a bug where the shopping list was not scrollable on some devices due to CSS flexbox constraints (`min-h-0`). The "Add Item" bar now remains correctly fixed at the bottom while the list scrolls.
+
 ## [2.3.0] - 2026-01-31
 
 ### Added

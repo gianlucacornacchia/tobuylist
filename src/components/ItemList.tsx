@@ -1,7 +1,7 @@
 import { Trash2, Check, CheckSquare, Square, GripVertical } from 'lucide-react';
 import { useStore } from '../store';
 import type { Item } from '../types';
-import { motion, AnimatePresence, useMotionValue, useTransform, Reorder, useDragControls } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, Reorder, useDragControls, animate } from 'framer-motion';
 import type { PanInfo } from 'framer-motion';
 
 export function ItemList() {
@@ -64,9 +64,9 @@ export function ItemList() {
     }
 
     return (
-        <div className="pb-24 overflow-x-hidden">
+        <div className="h-full overflow-y-scroll pb-24 overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
             <div className="space-y-1">
-                <Reorder.Group axis="y" values={pendingItems} onReorder={handleReorder}>
+                <Reorder.Group as="div" axis="y" values={pendingItems} onReorder={handleReorder}>
                     {pendingItems.map((item) => (
                         <SwipeableItem
                             key={item.id}
@@ -108,11 +108,13 @@ function SwipeableItem({ item, onToggle, onDelete, isBoughtList }: { item: Item;
     );
 
     const handleDragEnd = (_: any, info: PanInfo) => {
-        if (info.offset.x < -200) {
+        if (info.offset.x < -100) {
             onDelete();
-        } else if (info.offset.x > 200) {
+        } else if (info.offset.x > 100) {
             onToggle();
         }
+        // Always spring back to center
+        animate(x, 0, { type: 'spring', bounce: 0.2, duration: 0.4 });
     };
 
     const content = (
@@ -143,6 +145,7 @@ function SwipeableItem({ item, onToggle, onDelete, isBoughtList }: { item: Item;
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.7}
+                dragDirectionLock
                 onDragEnd={handleDragEnd}
                 style={{ x }}
                 className={`relative flex items-center justify-between border-b border-zinc-100 bg-white py-2 px-4 dark:border-zinc-800 dark:bg-zinc-900 ${item.isBought ? 'bg-zinc-50' : ''
@@ -194,9 +197,14 @@ function SwipeableItem({ item, onToggle, onDelete, isBoughtList }: { item: Item;
         return content;
     }
 
-    // For reorderable items, we use Reorder.Item
     return (
-        <Reorder.Item value={item} id={item.id} dragListener={false} dragControls={dragControls}>
+        <Reorder.Item
+            as="div"
+            value={item}
+            id={item.id}
+            dragListener={false}
+            dragControls={dragControls}
+        >
             {content}
         </Reorder.Item>
     );

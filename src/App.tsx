@@ -56,7 +56,7 @@ function App() {
             if (window.visualViewport) {
                 setHeight(`${window.visualViewport.height}px`);
                 // Scroll to top to ensure we aren't scrolled out of view
-                window.scrollTo(0, 0);
+                // window.scrollTo(0, 0);
             }
         };
 
@@ -81,7 +81,7 @@ function App() {
             style={{ height }}
             className="flex flex-col overflow-hidden bg-zinc-50 dark:bg-black"
         >
-            <div className="mx-auto flex w-full max-w-lg flex-1 flex-col bg-white shadow-2xl shadow-zinc-200 dark:bg-zinc-900 dark:shadow-zinc-900/50">
+            <div className="mx-auto flex w-full max-w-lg flex-1 flex-col min-h-0 bg-white shadow-2xl shadow-zinc-200 dark:bg-zinc-900 dark:shadow-zinc-900/50">
                 <Header onMenuClick={() => setIsMenuOpen(true)} />
                 <Menu
                     isOpen={isMenuOpen}
@@ -90,7 +90,7 @@ function App() {
                 />
                 {currentPage === 'list' ? (
                     <>
-                        <main className="flex-1 overflow-y-auto overscroll-contain">
+                        <main className="flex-1 min-h-0" style={{ touchAction: 'pan-y' }}>
                             <ItemList />
                         </main>
                         <AddItem />
