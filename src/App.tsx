@@ -36,6 +36,26 @@ function App() {
     const supabaseAnonKey = useStore((state) => state.supabaseAnonKey);
     const subscribeToSupabase = useStore((state) => state.subscribeToSupabase);
     const syncWithSupabase = useStore((state) => state.syncWithSupabase);
+    const setSupabaseConfig = useStore((state) => state.setSupabaseConfig);
+
+    useEffect(() => {
+        // Handle Magic Link / QR Code config sharing
+        const searchParams = new URLSearchParams(window.location.search);
+        const su = searchParams.get('su');
+        const sk = searchParams.get('sk');
+
+        if (su && sk) {
+            try {
+                const url = atob(su);
+                const key = atob(sk);
+                setSupabaseConfig(url, key);
+                // Clear the URL
+                window.history.replaceState({}, '', window.location.pathname);
+            } catch (e) {
+                console.error("Invalid Supabase configuration URL.");
+            }
+        }
+    }, [setSupabaseConfig]);
 
     useEffect(() => {
         if (!supabaseUrl || !supabaseAnonKey) return;

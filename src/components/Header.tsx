@@ -1,6 +1,7 @@
-import { ShoppingBag, Menu, RefreshCw, Settings, Check, X } from 'lucide-react';
+import { ShoppingBag, Menu, RefreshCw, Settings, Check, X, QrCode } from 'lucide-react';
 import { useStore } from '../store';
 import { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import pkg from '../../package.json';
 
 interface HeaderProps {
@@ -12,15 +13,18 @@ export function Header({ onMenuClick }: HeaderProps) {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [tempUrl, setTempUrl] = useState(supabaseUrl || '');
     const [tempKey, setTempKey] = useState(supabaseAnonKey || '');
+    const [showQR, setShowQR] = useState(false);
 
     const currentListName = lists.find(l => l.id === currentListId)?.name || 'My List';
 
     const handleSave = () => {
         setSupabaseConfig(tempUrl, tempKey);
         setIsSettingsOpen(false);
+        setShowQR(false);
     };
 
     const isConfigured = supabaseUrl && supabaseAnonKey;
+    const shareUrl = isConfigured ? `https://gianlucacornacchia.github.io/tobuylist/?su=${btoa(supabaseUrl)}&sk=${btoa(supabaseAnonKey)}` : '';
 
     return (
         <>
@@ -84,7 +88,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                     <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-zinc-900 overflow-y-auto max-h-[90vh]">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Supabase Sync</h2>
-                            <button onClick={() => setIsSettingsOpen(false)} className="text-zinc-400 hover:text-zinc-600">
+                            <button onClick={() => { setIsSettingsOpen(false); setShowQR(false); }} className="text-zinc-400 hover:text-zinc-600">
                                 <X size={20} />
                             </button>
                         </div>
@@ -92,7 +96,8 @@ export function Header({ onMenuClick }: HeaderProps) {
                             Configure your Supabase project to share this list.
                         </p>
 
-                        <div className="space-y-4 mb-6">
+                        {!showQR && (
+                            <div className="space-y-4 mb-6">
                             <div>
                                 <label className="block text-xs font-medium text-zinc-500 uppercase mb-1 font-bold">Project URL</label>
                                 <input
@@ -113,22 +118,46 @@ export function Header({ onMenuClick }: HeaderProps) {
                                     className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-zinc-800 dark:bg-zinc-800 dark:text-white"
                                 />
                             </div>
-                        </div>
+                            </div>
+                        )}
+
+                        {showQR && (
+                            <div className="flex flex-col items-center mb-6">
+                                <div className="bg-white p-4 rounded-xl shadow-sm border border-zinc-100">
+                                    <QRCodeSVG value={shareUrl} size={200} />
+                                </div>
+                                <p className="text-xs text-center text-zinc-500 mt-4 px-4">
+                                    Scan this QR code with your mobile device to copy the Supabase configuration automatically.
+                                </p>
+                            </div>
+                        )}
+
+                        {!showQR && isConfigured && (
+                            <button
+                                onClick={() => setShowQR(true)}
+                                className="w-full mb-4 flex justify-center items-center gap-2 rounded-xl bg-orange-50 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-100 transition-all dark:bg-orange-900/20 dark:text-orange-400"
+                            >
+                                <QrCode size={18} />
+                                Share Config via QR Code
+                            </button>
+                        )}
 
                         <div className="flex gap-3">
                             <button
-                                onClick={() => setIsSettingsOpen(false)}
+                                onClick={() => showQR ? setShowQR(false) : setIsSettingsOpen(false)}
                                 className="flex-1 rounded-xl bg-zinc-100 py-3 text-sm font-semibold text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
                             >
-                                Cancel
+                                {showQR ? 'Back' : 'Cancel'}
                             </button>
-                            <button
-                                onClick={handleSave}
-                                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600 active:transform active:scale-95 transition-all"
-                            >
-                                <Check size={18} />
-                                Save
-                            </button>
+                            {!showQR && (
+                                <button
+                                    onClick={handleSave}
+                                    className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600 active:transform active:scale-95 transition-all"
+                                >
+                                    <Check size={18} />
+                                    Save
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
