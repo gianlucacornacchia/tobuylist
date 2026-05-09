@@ -13,6 +13,8 @@ export interface Item {
     category?: string;
     createdAt: number;
     order: number;
+    quantity?: number;
+    unit?: string;
 }
 
 export interface Store {

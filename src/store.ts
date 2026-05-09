@@ -22,9 +22,10 @@ interface AppState {
     supabaseUrl: string | null;
     supabaseAnonKey: string | null;
     isSyncing: boolean;
-    addItem: (name: string, category?: string) => void;
+    addItem: (name: string, category?: string, quantity?: number, unit?: string) => void;
     toggleItem: (id: string) => void;
     deleteItem: (id: string) => void;
+    updateItemQuantity: (id: string, quantity: number | undefined, unit: string | undefined) => void;
     clearBought: () => void;
     setItems: (items: Item[]) => void;
     addStore: (store: Omit<Store, 'id' | 'createdAt'>) => void;
@@ -206,7 +207,9 @@ export const useStore = create<AppState>()(
                             is_bought: i.isBought,
                             category: i.category,
                             created_at: i.createdAt,
-                            item_order: i.order
+                            item_order: i.order,
+                            quantity: i.quantity ?? null,
+                            unit: i.unit ?? null
                         })));
 
                     if (error) throw error;
@@ -238,15 +241,21 @@ export const useStore = create<AppState>()(
                         category?: string;
                         created_at: number;
                         item_order: number;
-                    }) => ({
-                        id: r.id,
-                        listId: r.list_id,
-                        name: r.name,
-                        isBought: r.is_bought,
-                        category: r.category,
-                        createdAt: r.created_at,
-                        order: r.item_order
-                    }));
+                        quantity?: number | null;
+                        unit?: string | null;
+                    }) => {
+                        return {
+                            id: r.id,
+                            listId: r.list_id,
+                            name: r.name,
+                            isBought: r.is_bought,
+                            category: r.category,
+                            createdAt: r.created_at,
+                            order: r.item_order,
+                            quantity: r.quantity ?? undefined,
+                            unit: r.unit ?? undefined
+                        };
+                    });
 
                     // We are replacing items for the *current list* only.
                     // But wait, the state.items should probably only contain items for the current list? 
@@ -304,6 +313,8 @@ export const useStore = create<AppState>()(
                                     category: payload.new.category,
                                     createdAt: payload.new.created_at,
                                     order: payload.new.item_order,
+                                    quantity: payload.new.quantity ?? undefined,
+                                    unit: payload.new.unit ?? undefined
                                 };
                                 // Only add if not already present (local add might have already put it there)
                                 if (!items.find(i => i.id === newItem.id)) {
@@ -320,6 +331,8 @@ export const useStore = create<AppState>()(
                                     category: payload.new.category,
                                     createdAt: payload.new.created_at,
                                     order: payload.new.item_order,
+                                    quantity: payload.new.quantity ?? undefined,
+                                    unit: payload.new.unit ?? undefined
                                 };
                                 set({
                                     items: items.map(i => i.id === updatedItem.id ? updatedItem : i)
@@ -340,7 +353,7 @@ export const useStore = create<AppState>()(
                     supabase.removeChannel(channel);
                 };
             },
-            addItem: (name, category) => {
+            addItem: (name, category, quantity, unit) => {
 
                 set((state) => {
                     // Ensure list exists logic inside setter or check before? 
@@ -400,7 +413,9 @@ export const useStore = create<AppState>()(
                             ...existingItem,
                             isBought: false, // Revive if bought
                             order: rank,     // Apply smart sort order
-                            category: category ?? existingItem.category // Update category if provided
+                            category: category ?? existingItem.category, // Update category if provided
+                            quantity: quantity !== undefined ? quantity : existingItem.quantity,
+                            unit: unit !== undefined ? unit : existingItem.unit
                         };
 
                         return {
@@ -421,6 +436,8 @@ export const useStore = create<AppState>()(
                                 category,
                                 createdAt: Date.now(),
                                 order: rank,
+                                quantity: quantity ?? undefined,
+                                unit: unit ?? undefined
                             },
                             ...state.items,
                         ],
@@ -483,6 +500,14 @@ export const useStore = create<AppState>()(
                     const supabase = createClient(supabaseUrl, supabaseAnonKey);
                     supabase.from('items').delete().eq('id', id).then();
                 }
+            },
+            updateItemQuantity: (id, quantity, unit) => {
+                set((state) => ({
+                    items: state.items.map((item) =>
+                        item.id === id ? { ...item, quantity, unit } : item
+                    ),
+                }));
+                get().pushLocalChanges();
             },
             clearBought: () => {
                 const boughtIds = get().items.filter(i => i.isBought).map(i => i.id);

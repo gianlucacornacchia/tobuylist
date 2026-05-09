@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Trash2, Check, CheckSquare, Square, GripVertical } from 'lucide-react';
 import { useStore } from '../store';
 import type { Item } from '../types';
@@ -10,6 +11,7 @@ export function ItemList() {
     const toggleItem = useStore((state) => state.toggleItem);
     const deleteItem = useStore((state) => state.deleteItem);
     const setItems = useStore((state) => state.setItems);
+    const updateItemQuantity = useStore((state) => state.updateItemQuantity);
 
     const listItems = items.filter(i => i.listId === currentListId);
 
@@ -73,6 +75,7 @@ export function ItemList() {
                             item={item}
                             onToggle={() => toggleItem(item.id)}
                             onDelete={() => deleteItem(item.id)}
+                            onUpdateQuantity={(qty, unit) => updateItemQuantity(item.id, qty, unit)}
                         />
                     ))}
                 </Reorder.Group>
@@ -85,6 +88,7 @@ export function ItemList() {
                                 item={item}
                                 onToggle={() => toggleItem(item.id)}
                                 onDelete={() => deleteItem(item.id)}
+                                onUpdateQuantity={(qty, unit) => updateItemQuantity(item.id, qty, unit)}
                                 isBoughtList
                             />
                         ))}
@@ -95,8 +99,9 @@ export function ItemList() {
     );
 }
 
-function SwipeableItem({ item, onToggle, onDelete, isBoughtList }: { item: Item; onToggle: () => void; onDelete: () => void; isBoughtList?: boolean }) {
+function SwipeableItem({ item, onToggle, onDelete, onUpdateQuantity, isBoughtList }: { item: Item; onToggle: () => void; onDelete: () => void; onUpdateQuantity: (qty: number | undefined, unit: string | undefined) => void; isBoughtList?: boolean }) {
     const x = useMotionValue(0);
+    const [isEditingQty, setIsEditingQty] = useState(false);
 
     const dragControls = useDragControls();
 
@@ -181,13 +186,15 @@ function SwipeableItem({ item, onToggle, onDelete, isBoughtList }: { item: Item;
                     </button>
 
                     <span
-                        className={`text-base font-medium transition-all select-none ${item.isBought
+                        onClick={() => setIsEditingQty(true)}
+                        className={`text-base font-medium transition-all select-none flex-1 truncate cursor-pointer ${item.isBought
                             ? 'text-zinc-400 line-through dark:text-zinc-500'
                             : 'text-zinc-900 dark:text-zinc-100'
                             }`}
                     >
                         {item.name}
                     </span>
+                    <QuantityEditor item={item} onChange={onUpdateQuantity} isEditing={isEditingQty} setIsEditing={setIsEditingQty} />
                 </div>
             </motion.div>
         </motion.div>
@@ -207,5 +214,83 @@ function SwipeableItem({ item, onToggle, onDelete, isBoughtList }: { item: Item;
         >
             {content}
         </Reorder.Item>
+    );
+}
+
+function QuantityEditor({ item, onChange, isEditing, setIsEditing }: { item: Item, onChange: (qty: number | undefined, unit: string | undefined) => void, isEditing: boolean, setIsEditing: (v: boolean) => void }) {
+    const [qty, setQty] = useState(item.quantity?.toString() || '');
+    const [unit, setUnit] = useState(item.unit || '');
+
+    // Sync input state when edit mode opens
+    useEffect(() => {
+        if (isEditing) {
+            setQty(item.quantity?.toString() || '');
+            setUnit(item.unit || '');
+        }
+    }, [isEditing, item.quantity, item.unit]);
+
+    const handleOpen = (e: React.MouseEvent) => {
+        e.stopPropagation(); 
+        setIsEditing(true); 
+        setQty(item.quantity?.toString() || ''); 
+        setUnit(item.unit || '');
+    };
+
+    const handleSave = () => {
+        setIsEditing(false);
+        const parsed = parseFloat(qty);
+        onChange(isNaN(parsed) || qty === '' ? undefined : parsed, unit === '' ? undefined : unit);
+    };
+
+    if (!isEditing) {
+        if (!item.quantity || item.quantity === 1) return null;
+
+        return (
+            <button 
+                onClick={handleOpen}
+                onPointerDown={(e) => e.stopPropagation()}
+                className={`px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400`}
+            >
+                {`${item.quantity} ${item.unit || ''}`.trim()}
+            </button>
+        );
+    }
+
+    return (
+        <div className="flex items-center gap-1 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()}>
+            <button 
+                onClick={() => setQty(String((parseFloat(qty) || 0) + 1))} 
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 active:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+            >
+                +
+            </button>
+            <input 
+                type="number" 
+                value={qty} 
+                onChange={e => setQty(e.target.value)}
+                className="w-10 px-0 py-1 text-center text-sm bg-transparent outline-none dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                placeholder="0"
+                autoFocus
+            />
+            <button 
+                onClick={() => setQty(String(Math.max(0, (parseFloat(qty) || 0) - 1)))} 
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 active:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+            >
+                -
+            </button>
+            <select 
+                value={unit} 
+                onChange={e => setUnit(e.target.value)}
+                className="px-2 py-1 text-sm rounded-full appearance-none bg-zinc-100 text-center outline-none active:bg-zinc-200 dark:bg-zinc-800 dark:text-white"
+            >
+                <option value="">unit</option>
+                <option value="Kg">Kg</option>
+                <option value="g">g</option>
+                <option value="L">L</option>
+            </select>
+            <button onClick={handleSave} className="ml-1 p-1.5 rounded-full text-green-600 bg-green-50 hover:bg-green-100 active:scale-95 dark:text-green-500 dark:bg-green-500/10 dark:hover:bg-green-500/20">
+                <Check size={16} strokeWidth={3} />
+            </button>
+        </div>
     );
 }

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import { useStore } from '../store';
 
 export function AddItem() {
     const [name, setName] = useState('');
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
     const addItem = useStore((state) => state.addItem);
     const itemHistory = useStore((state) => state.itemHistory);
     const itemBuyCounts = useStore((state) => state.itemBuyCounts);
@@ -37,19 +38,49 @@ export function AddItem() {
         }).slice(0, 3) // Limit to 3 suggestions
         : [];
 
+    const parseInput = (input: string) => {
+        let name = input.trim();
+        let quantity: number | undefined;
+        let unit: string | undefined;
+
+        // Check format: "2 Kg Apples" or "2Kg Apples" or "2 Apples"
+        const startMatch = name.match(/^([\d.]+)\s*(Kg|g|L)?\s+(.+)$/i);
+        if (startMatch) {
+            quantity = parseFloat(startMatch[1]);
+            unit = startMatch[2];
+            name = startMatch[3];
+        } else {
+            // Check format: "Apples 2 Kg" or "Apples 2Kg"
+            const endMatch = name.match(/^(.+?)\s+([\d.]+)\s*(Kg|g|L)?$/i);
+            if (endMatch) {
+                name = endMatch[1];
+                quantity = parseFloat(endMatch[2]);
+                unit = endMatch[3];
+            }
+        }
+
+        if (unit) {
+            const lower = unit.toLowerCase();
+            unit = lower === 'l' ? 'L' : (lower === 'kg' ? 'Kg' : 'g');
+        }
+
+        return { name, quantity: isNaN(quantity as any) ? undefined : quantity, unit };
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (name.trim()) {
-            addItem(name.trim());
+            const parsed = parseInput(name);
+            addItem(parsed.name, undefined, parsed.quantity, parsed.unit);
             setName('');
             setShowSuggestions(false);
         }
     };
 
     const handleSuggestionClick = (suggestion: string) => {
-        addItem(suggestion);
-        setName('');
+        setName(suggestion + ' ');
         setShowSuggestions(false);
+        inputRef.current?.focus();
     };
 
     return (
@@ -77,6 +108,7 @@ export function AddItem() {
 
             <div className="mx-auto flex max-w-md gap-2">
                 <input
+                    ref={inputRef}
                     type="text"
                     value={name}
                     onChange={(e) => {
