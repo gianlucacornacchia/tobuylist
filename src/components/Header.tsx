@@ -6,11 +6,12 @@ import pkg from '../../package.json';
 
 interface HeaderProps {
     onMenuClick: () => void;
+    isSettingsOpen: boolean;
+    setIsSettingsOpen: (isOpen: boolean) => void;
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function Header({ onMenuClick, isSettingsOpen, setIsSettingsOpen }: HeaderProps) {
     const { supabaseUrl, supabaseAnonKey, setSupabaseConfig, syncWithSupabase, isSyncing, lists, currentListId } = useStore();
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [tempUrl, setTempUrl] = useState(supabaseUrl || '');
     const [tempKey, setTempKey] = useState(supabaseAnonKey || '');
     const [showQR, setShowQR] = useState(false);

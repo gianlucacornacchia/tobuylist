@@ -192,12 +192,27 @@ export const useStore = create<AppState>()(
                 await get().pullRemoteChanges();
             },
             pushLocalChanges: async () => {
-                const { supabaseUrl, supabaseAnonKey, items } = get();
+                const { supabaseUrl, supabaseAnonKey, items, lists } = get();
                 if (!supabaseUrl || !supabaseAnonKey) return;
 
                 const supabase = createClient(supabaseUrl, supabaseAnonKey);
                 try {
                     set({ isSyncing: true });
+                    
+                    // Push Lists first
+                    if (lists && lists.length > 0) {
+                        const { error: listError } = await supabase
+                            .from('lists')
+                            .upsert(lists.map(l => ({
+                                id: l.id,
+                                name: l.name,
+                                created_at: new Date(l.createdAt).toISOString(),
+                                share_code: l.shareCode
+                            })));
+                        if (listError) throw listError;
+                    }
+
+                    // Then Push Items
                     const { error } = await supabase
                         .from('items')
                         .upsert(items.map(i => ({

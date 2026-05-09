@@ -162,13 +162,18 @@ export function ListManager() {
 
                         <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             {list.shareCode && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); copyToClipboard(list.shareCode!); }}
-                                    className={`p-1.5 rounded-lg transition-colors ${currentListId === list.id ? 'hover:bg-white/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
-                                    title={`Copy Code: ${list.shareCode}`}
-                                >
-                                    {copiedCode === list.shareCode ? <CheckCircle2 size={16} /> : <Copy size={16} />}
-                                </button>
+                                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg pr-1 pl-3">
+                                    <span className="text-xs font-mono font-bold tracking-widest text-zinc-600 dark:text-zinc-300">
+                                        {list.shareCode}
+                                    </span>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); copyToClipboard(list.shareCode!); }}
+                                        className="p-1.5 rounded-md hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+                                        title="Copy Share Code"
+                                    >
+                                        {copiedCode === list.shareCode ? <CheckCircle2 size={16} className="text-green-500" /> : <Copy size={16} />}
+                                    </button>
+                                </div>
                             )}
 
                             <button

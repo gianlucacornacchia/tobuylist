@@ -10,6 +10,7 @@ import { useStore } from './store';
 function App() {
     const [height, setHeight] = useState('100dvh');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState<'list' | 'stores'>('list');
 
     const stores = useStore((state) => state.stores);
@@ -102,7 +103,11 @@ function App() {
             className="flex flex-col overflow-hidden bg-zinc-50 dark:bg-black"
         >
             <div className="mx-auto flex w-full max-w-lg flex-1 flex-col min-h-0 bg-white shadow-2xl shadow-zinc-200 dark:bg-zinc-900 dark:shadow-zinc-900/50">
-                <Header onMenuClick={() => setIsMenuOpen(true)} />
+                <Header 
+                    onMenuClick={() => setIsMenuOpen(true)} 
+                    isSettingsOpen={isSettingsOpen}
+                    setIsSettingsOpen={setIsSettingsOpen}
+                />
                 <Menu
                     isOpen={isMenuOpen}
                     onClose={() => setIsMenuOpen(false)}
@@ -110,10 +115,10 @@ function App() {
                 />
                 {currentPage === 'list' ? (
                     <>
-                        <main className="flex-1 min-h-0" style={{ touchAction: 'pan-y' }}>
+                        <main className="flex-1 min-h-0 pb-24" style={{ touchAction: 'pan-y' }}>
                             <ItemList />
                         </main>
-                        <AddItem />
+                        {(!isMenuOpen && !isSettingsOpen) && <AddItem />}
                     </>
                 ) : (
                     <StoreManager onBack={() => setCurrentPage('list')} />
