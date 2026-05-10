@@ -272,7 +272,8 @@ function QuantityEditor({ item, onChange, isEditing, setIsEditing }: { item: Ite
                 +
             </button>
             <input 
-                type="number" 
+                type="number"
+                inputMode="decimal"
                 value={qty} 
                 onChange={e => setQty(e.target.value)}
                 className="w-10 px-0 py-1 text-center text-sm bg-transparent outline-none dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
