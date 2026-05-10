@@ -115,7 +115,26 @@ export function AddItem() {
                         setName(e.target.value);
                         setShowSuggestions(true);
                     }}
-                    onFocus={() => setShowSuggestions(true)}
+                    onFocus={() => {
+                        setShowSuggestions(true);
+                        // On iOS Safari, the virtual keyboard animation can
+                        // leave the input outside the visible area.  After the
+                        // visual viewport has had time to settle, nudge the
+                        // window scroll so the fixed container (which tracks
+                        // visualViewport.offsetTop) stays aligned.
+                        if (window.visualViewport) {
+                            const settle = () => {
+                                window.visualViewport!.removeEventListener('resize', settle);
+                                // Let the viewport handler in App.tsx apply
+                                // its rAF update first, then reset scroll so
+                                // the fixed container lands in the right spot.
+                                requestAnimationFrame(() => {
+                                    window.scrollTo(0, 0);
+                                });
+                            };
+                            window.visualViewport.addEventListener('resize', settle, { once: true });
+                        }
+                    }}
                     placeholder="Add item..."
                     className="flex-1 rounded-full border-0 bg-zinc-100 px-6 py-4 text-base outline-none ring-1 ring-inset ring-zinc-200 placeholder:text-zinc-500 focus:ring-2 focus:ring-inset focus:ring-orange-500 dark:bg-zinc-800 dark:text-white dark:ring-zinc-700 dark:focus:ring-orange-500"
                 />

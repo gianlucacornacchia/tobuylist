@@ -9,6 +9,7 @@ import { useStore } from './store';
 
 function App() {
     const [height, setHeight] = useState('100dvh');
+    const [vpOffset, setVpOffset] = useState(0);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState<'list' | 'stores'>('list');
@@ -72,24 +73,53 @@ function App() {
     }, [supabaseUrl, supabaseAnonKey, subscribeToSupabase, syncWithSupabase]);
 
     useEffect(() => {
-        // Visual Viewport API for reliable mobile keyboard handling
-        const handleResize = () => {
-            if (window.visualViewport) {
-                setHeight(`${window.visualViewport.height}px`);
-                // Scroll to top to ensure we aren't scrolled out of view
-                // window.scrollTo(0, 0);
+        // Visual Viewport API for reliable mobile keyboard handling.
+        // On iOS, when the keyboard opens the visual viewport shrinks and
+        // scrolls independently of the layout viewport. position:fixed
+        // elements are anchored to the layout viewport, so without
+        // compensating for visualViewport.offsetTop the app gets pushed
+        // out of the visible area.
+        let rafId: number | undefined;
+
+        const handleViewport = () => {
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                if (window.visualViewport) {
+                    setHeight(`${window.visualViewport.height}px`);
+                    setVpOffset(window.visualViewport.offsetTop);
+                }
+            });
+        };
+
+        const handleWindowScroll = () => {
+            // Safety net: prevent any window-level scrolling.
+            // But skip when an input/textarea is focused — iOS Safari
+            // intentionally scrolls the layout viewport to bring the
+            // focused element above the virtual keyboard.  Fighting
+            // that scroll causes the fixed container to be mis-positioned,
+            // pushing the input out of the visible area.
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+            if (window.scrollY > 0 || window.scrollX > 0) {
+                window.scrollTo(0, 0);
             }
         };
 
         if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', handleResize);
-            handleResize(); // Init
+            window.visualViewport.addEventListener('resize', handleViewport);
+            window.visualViewport.addEventListener('scroll', handleViewport);
+            window.addEventListener('scroll', handleWindowScroll);
+            handleViewport(); // Init
         }
 
         return () => {
+            if (rafId) cancelAnimationFrame(rafId);
             if (window.visualViewport) {
-                window.visualViewport.removeEventListener('resize', handleResize);
+                window.visualViewport.removeEventListener('resize', handleViewport);
+                window.visualViewport.removeEventListener('scroll', handleViewport);
             }
+            window.removeEventListener('scroll', handleWindowScroll);
         };
     }, []);
 
@@ -99,7 +129,7 @@ function App() {
 
     return (
         <div
-            style={{ height }}
+            style={{ height, top: `${vpOffset}px`, position: 'fixed', left: 0, right: 0 }}
             className="flex flex-col overflow-hidden bg-zinc-50 dark:bg-black"
         >
             <div className="mx-auto flex w-full max-w-lg flex-1 flex-col min-h-0 bg-white shadow-2xl shadow-zinc-200 dark:bg-zinc-900 dark:shadow-zinc-900/50">
