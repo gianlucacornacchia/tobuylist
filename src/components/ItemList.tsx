@@ -243,9 +243,11 @@ function QuantityEditor({ item, onChange, isEditing, setIsEditing }: { item: Ite
         setUnit(item.unit || '');
     };
 
+    const parseQty = (v: string) => parseFloat(v.replace(',', '.'));
+
     const handleSave = () => {
         setIsEditing(false);
-        const parsed = parseFloat(qty);
+        const parsed = parseQty(qty);
         onChange(isNaN(parsed) || qty === '' ? undefined : parsed, unit === '' ? undefined : unit);
     };
 
@@ -266,22 +268,25 @@ function QuantityEditor({ item, onChange, isEditing, setIsEditing }: { item: Ite
     return (
         <div className="flex items-center gap-1 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()}>
             <button 
-                onClick={() => setQty(String((parseFloat(qty) || 0) + 1))} 
+                onClick={() => setQty(String((parseQty(qty) || 0) + 1))} 
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 active:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
             >
                 +
             </button>
             <input 
-                type="number"
+                type="text"
                 inputMode="decimal"
                 value={qty} 
-                onChange={e => setQty(e.target.value)}
-                className="w-10 px-0 py-1 text-center text-sm bg-transparent outline-none dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                onChange={e => {
+                    const v = e.target.value;
+                    if (v === '' || /^[0-9]*[.,]?[0-9]*$/.test(v)) setQty(v);
+                }}
+                className="w-10 px-0 py-1 text-center text-sm bg-transparent outline-none dark:text-white"
                 placeholder="0"
                 autoFocus
             />
             <button 
-                onClick={() => setQty(String(Math.max(0, (parseFloat(qty) || 0) - 1)))} 
+                onClick={() => setQty(String(Math.max(0, (parseQty(qty) || 0) - 1)))} 
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 active:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
             >
                 -
