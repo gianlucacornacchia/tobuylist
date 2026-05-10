@@ -12,6 +12,7 @@ function App() {
     const [vpOffset, setVpOffset] = useState(0);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isEditingQuantity, setIsEditingQuantity] = useState(false);
     const [currentPage, setCurrentPage] = useState<'list' | 'stores'>('list');
 
     const stores = useStore((state) => state.stores);
@@ -146,9 +147,9 @@ function App() {
                 {currentPage === 'list' ? (
                     <>
                         <main className="flex-1 min-h-0 pb-24" style={{ touchAction: 'pan-y' }}>
-                            <ItemList />
+                            <ItemList onEditingQuantityChange={setIsEditingQuantity} />
                         </main>
-                        {(!isMenuOpen && !isSettingsOpen) && <AddItem />}
+                        {(!isMenuOpen && !isSettingsOpen && !isEditingQuantity) && <AddItem />}
                     </>
                 ) : (
                     <StoreManager onBack={() => setCurrentPage('list')} />

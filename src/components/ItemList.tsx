@@ -5,7 +5,7 @@ import type { Item } from '../types';
 import { motion, AnimatePresence, useMotionValue, useTransform, Reorder, useDragControls, animate } from 'framer-motion';
 import type { PanInfo } from 'framer-motion';
 
-export function ItemList() {
+export function ItemList({ onEditingQuantityChange }: { onEditingQuantityChange?: (editing: boolean) => void }) {
     const items = useStore((state) => state.items);
     const currentListId = useStore((state) => state.currentListId);
     const toggleItem = useStore((state) => state.toggleItem);
@@ -76,6 +76,7 @@ export function ItemList() {
                             onToggle={() => toggleItem(item.id)}
                             onDelete={() => deleteItem(item.id)}
                             onUpdateQuantity={(qty, unit) => updateItemQuantity(item.id, qty, unit)}
+                            onEditingQuantityChange={onEditingQuantityChange}
                         />
                     ))}
                 </Reorder.Group>
@@ -89,6 +90,7 @@ export function ItemList() {
                                 onToggle={() => toggleItem(item.id)}
                                 onDelete={() => deleteItem(item.id)}
                                 onUpdateQuantity={(qty, unit) => updateItemQuantity(item.id, qty, unit)}
+                                onEditingQuantityChange={onEditingQuantityChange}
                                 isBoughtList
                             />
                         ))}
@@ -99,9 +101,14 @@ export function ItemList() {
     );
 }
 
-function SwipeableItem({ item, onToggle, onDelete, onUpdateQuantity, isBoughtList }: { item: Item; onToggle: () => void; onDelete: () => void; onUpdateQuantity: (qty: number | undefined, unit: string | undefined) => void; isBoughtList?: boolean }) {
+function SwipeableItem({ item, onToggle, onDelete, onUpdateQuantity, onEditingQuantityChange, isBoughtList }: { item: Item; onToggle: () => void; onDelete: () => void; onUpdateQuantity: (qty: number | undefined, unit: string | undefined) => void; onEditingQuantityChange?: (editing: boolean) => void; isBoughtList?: boolean }) {
     const x = useMotionValue(0);
     const [isEditingQty, setIsEditingQty] = useState(false);
+
+    const handleSetIsEditingQty = (editing: boolean) => {
+        setIsEditingQty(editing);
+        onEditingQuantityChange?.(editing);
+    };
 
     const dragControls = useDragControls();
 
@@ -186,7 +193,7 @@ function SwipeableItem({ item, onToggle, onDelete, onUpdateQuantity, isBoughtLis
                     </button>
 
                     <span
-                        onClick={() => setIsEditingQty(true)}
+                        onClick={() => handleSetIsEditingQty(true)}
                         className={`text-base font-medium transition-all select-none flex-1 truncate cursor-pointer ${item.isBought
                             ? 'text-zinc-400 line-through dark:text-zinc-500'
                             : 'text-zinc-900 dark:text-zinc-100'
@@ -194,7 +201,7 @@ function SwipeableItem({ item, onToggle, onDelete, onUpdateQuantity, isBoughtLis
                     >
                         {item.name}
                     </span>
-                    <QuantityEditor item={item} onChange={onUpdateQuantity} isEditing={isEditingQty} setIsEditing={setIsEditingQty} />
+                    <QuantityEditor item={item} onChange={onUpdateQuantity} isEditing={isEditingQty} setIsEditing={handleSetIsEditingQty} />
                 </div>
             </motion.div>
         </motion.div>
