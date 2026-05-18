@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { Header } from './components/Header';
 import { ItemList } from './components/ItemList';
 import { AddItem } from './components/AddItem';
@@ -14,6 +15,7 @@ function App() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isEditingQuantity, setIsEditingQuantity] = useState(false);
     const [currentPage, setCurrentPage] = useState<'list' | 'stores'>('list');
+    const [showInstallBanner, setShowInstallBanner] = useState(false);
 
     const stores = useStore((state) => state.stores);
     const currentStore = useStore((state) => state.currentStore);
@@ -43,17 +45,43 @@ function App() {
 
     useEffect(() => {
         // Handle Magic Link / QR Code config sharing
-        const searchParams = new URLSearchParams(window.location.search);
-        const su = searchParams.get('su');
-        const sk = searchParams.get('sk');
+        // Try hash fragment first (new format, survives iOS Add-to-Home-Screen)
+        let su: string | null = null;
+        let sk: string | null = null;
+        let fromHash = false;
+
+        if (window.location.hash && window.location.hash.length > 1) {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            su = hashParams.get('su');
+            sk = hashParams.get('sk');
+            if (su && sk) fromHash = true;
+        }
+
+        // Fallback to query params (backward compat with old QR codes)
+        if (!su || !sk) {
+            const searchParams = new URLSearchParams(window.location.search);
+            su = searchParams.get('su');
+            sk = searchParams.get('sk');
+        }
 
         if (su && sk) {
             try {
                 const url = atob(su.replace(/ /g, '+'));
                 const key = atob(sk.replace(/ /g, '+'));
                 setSupabaseConfig(url, key);
-                // Clear the URL
-                window.history.replaceState({}, '', window.location.pathname);
+
+                if (fromHash) {
+                    // Keep hash in URL — iOS Safari needs it for Add-to-Home-Screen.
+                    // Show install banner on iOS Safari when not already in standalone mode.
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                    const isStandalone = ('standalone' in navigator) && (navigator as unknown as { standalone: boolean }).standalone;
+                    if (isIOS && !isStandalone) {
+                        setShowInstallBanner(true);
+                    }
+                } else {
+                    // Clear query params (old format), preserve any hash
+                    window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+                }
             } catch (e) {
                 console.error("Invalid Supabase configuration URL.");
             }
@@ -134,6 +162,21 @@ function App() {
             className="flex flex-col overflow-hidden bg-zinc-50 dark:bg-black"
         >
             <div className="mx-auto flex w-full max-w-lg flex-1 flex-col min-h-0 bg-white shadow-2xl shadow-zinc-200 dark:bg-zinc-900 dark:shadow-zinc-900/50">
+                {showInstallBanner && (
+                    <div className="flex items-center gap-3 bg-orange-50 px-4 py-3 text-sm dark:bg-orange-900/20">
+                        <div className="flex-1 text-orange-800 dark:text-orange-200">
+                            <strong>Tip:</strong> Tap the Share button
+                            {' '}then <strong>"Add to Home Screen"</strong> for the best experience.
+                        </div>
+                        <button
+                            onClick={() => setShowInstallBanner(false)}
+                            className="shrink-0 rounded-lg p-1 text-orange-600 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-800/30"
+                            aria-label="Dismiss"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                )}
                 <Header 
                     onMenuClick={() => setIsMenuOpen(true)} 
                     isSettingsOpen={isSettingsOpen}

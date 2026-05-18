@@ -32,7 +32,7 @@ export function Header({ onMenuClick, isSettingsOpen, setIsSettingsOpen }: Heade
     };
 
     const isConfigured = supabaseUrl && supabaseAnonKey;
-    const shareUrl = isConfigured ? `https://gianlucacornacchia.github.io/tobuylist/?su=${encodeURIComponent(btoa(supabaseUrl))}&sk=${encodeURIComponent(btoa(supabaseAnonKey))}` : '';
+    const shareUrl = isConfigured ? `https://gianlucacornacchia.github.io/tobuylist/#su=${encodeURIComponent(btoa(supabaseUrl))}&sk=${encodeURIComponent(btoa(supabaseAnonKey))}` : '';
 
     return (
         <>
