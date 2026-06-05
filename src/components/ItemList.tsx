@@ -116,14 +116,14 @@ function SwipeableItem({ item, onToggle, onDelete, onUpdateQuantity, onEditingQu
     const backgroundColor = useTransform(
         x,
         [-1, 0, 1],
-        ['rgb(239, 68, 68)', 'rgba(0,0,0,0)', 'rgb(34, 197, 94)']
+        ['rgb(34, 197, 94)', 'rgba(0,0,0,0)', 'rgb(239, 68, 68)']
     );
 
     const handleDragEnd = (_: any, info: PanInfo) => {
         if (info.offset.x < -100) {
-            onDelete();
-        } else if (info.offset.x > 100) {
             onToggle();
+        } else if (info.offset.x > 100) {
+            onDelete();
         }
         // Always spring back to center
         animate(x, 0, { type: 'spring', bounce: 0.2, duration: 0.4 });
@@ -143,12 +143,12 @@ function SwipeableItem({ item, onToggle, onDelete, onUpdateQuantity, onEditingQu
                 className="absolute inset-0 flex items-center justify-between px-6"
             >
                 <div className="flex items-center gap-2 text-white font-medium">
-                    <Check size={20} strokeWidth={3} />
-                    <span>{item.isBought ? 'To buy' : 'Bought'}</span>
+                    <Trash2 size={20} />
+                    <span>Delete</span>
                 </div>
                 <div className="flex items-center gap-2 text-white font-medium">
-                    <span>Delete</span>
-                    <Trash2 size={20} />
+                    <span>{item.isBought ? 'To buy' : 'Bought'}</span>
+                    <Check size={20} strokeWidth={3} />
                 </div>
             </motion.div>
 
