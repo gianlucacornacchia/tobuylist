@@ -5,9 +5,9 @@ This document outlines the core user stories that define the current feature set
 ---
 
 ## 1. Application Shell & Layout
-- **US1:** As a user, I want the app to display as a single full-screen view optimised for mobile, with a fixed header at the top, a scrollable item list in the middle, and a pinned "Add item" bar at the bottom.
+- **US1:** As a user, I want the app to display as a single full-screen view optimised for mobile, with a fixed header at the top, a scrollable item list in the middle, and a floating add button in the bottom-right corner.
 - **US2:** As a user, I want the app to support light and dark mode automatically based on my system preference.
-- **US3:** As a user, I want the header to show the current list name, the app version number, a hamburger menu button, and sync/settings buttons.
+- **US3:** As a user, I want the header to show the current list name and a hamburger menu button. The side menu contains sync controls, settings, and the version number.
 - **US4:** As a user on iOS, I want the app to correctly handle the virtual keyboard without pushing the input field or content off-screen. The visible area must resize to match the visual viewport, and the fixed container must stay anchored to the visible area.
 
 ## 2. Item Management
@@ -37,10 +37,12 @@ This document outlines the core user stories that define the current feature set
 - **US24:** As a shopper, I want the "Add item" search box to be hidden while I'm editing a quantity, so the keyboard and quantity editor are not competing for screen space. The search box should reappear when I close the editor.
 
 ## 5. Search Box / Add Item Input
-- **US25:** As a shopper, I want the "Add item" search box to be pinned at the bottom of the screen with a rounded text input and an orange circular add button, always visible above the item list.
+- **US25:** As a shopper, I want a floating action button ("+") in the bottom-right corner that opens the add-item search bar when tapped.
+- **US25b:** As a shopper, I want the search bar to remain open after adding an item, so I can add multiple items in a row without re-opening it.
+- **US25c:** As a shopper, I want an "X" close button next to the input to dismiss the search bar when I'm done adding items.
 - **US26:** As a shopper, I want the search box to show a standard alphanumeric keyboard when focused, since I need to type item names, quantities, and units in free-form text.
 - **US27:** As a shopper on iOS, I want the search box to remain visible when the virtual keyboard opens, so I can see what I'm typing and not have the input pushed off-screen.
-- **US28:** As a shopper, I want the search box to be hidden when the side menu or settings dialog is open, to avoid accidental input.
+- **US28:** As a shopper, I want the FAB to be hidden when the side menu or settings dialog is open, to avoid accidental input.
 
 ## 6. Smart Suggestions & Autocomplete
 - **US29:** As a shopper, I want the add-item input to show a suggestion popup (up to 3 items) above the search box as I type, drawn from my purchase history, sorted by frequency (most-bought first), so I can populate my list with fewer keystrokes.
@@ -84,13 +86,13 @@ This document outlines the core user stories that define the current feature set
 - **US57:** As a user, I want the PWA service worker to auto-update, so I always get the latest version without manual intervention.
 
 ## 12. Supabase Sync & Real-Time Collaboration
-- **US58:** As a user, I want to configure Supabase sync by entering a Project URL and Anon Key in a settings dialog accessible from the header.
+- **US58:** As a user, I want to configure Supabase sync by entering a Project URL and Anon Key in a settings dialog accessible from the menu.
 - **US59:** As a user, I want the Anon Key field to be masked (password input) for security.
-- **US60:** As a user, I want to see a "Sync Setup" button in the header when Supabase is not configured, and a sync icon + settings icon when it is configured.
+- **US60:** As a user, I want to see a "Sync Setup" button in the menu when Supabase is not configured, and a "Sync Now" + settings button when it is configured.
 - **US61:** As a user, I want the sync icon to spin while a sync operation is in progress.
 - **US62:** As a user, I want the app to perform an initial full sync (push local changes, then pull remote changes) when Supabase credentials are first configured or when the app starts with valid credentials.
 - **US63:** As a family member, I want real-time collaboration: when another device adds, updates, or deletes an item on the same list, my view should update automatically via Supabase Realtime (Postgres Changes).
-- **US64:** As a user, I want to manually trigger a sync by tapping the sync button in the header.
+- **US64:** As a user, I want to manually trigger a sync by tapping the "Sync Now" button in the menu.
 - **US65:** As a user, I want to disconnect from Supabase by pressing a "Disconnect" button in the settings dialog, clearing the stored credentials.
 - **US66:** As a user, I want to share my Supabase configuration with another device by generating a QR code that encodes the Project URL and Anon Key (Base64-encoded in URL parameters).
 - **US66b:** As a user, I want to scan a QR code using my device camera from the Sync Setup dialog to automatically extract and apply Supabase credentials without manual entry.
@@ -106,7 +108,7 @@ This document outlines the core user stories that define the current feature set
 
 ## 14. Input Fields by Screen
 
-### Add Item (bottom bar)
+### Add Item (FAB + expandable bar)
 | Field | Keyboard shown | Notes |
 |-------|----------------|-------|
 | Item name | Standard alphanumeric | Supports inline quantity parsing (e.g., "2 Kg Apples") |

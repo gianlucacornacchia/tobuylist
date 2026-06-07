@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
-import { Plus } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Plus, X } from 'lucide-react';
 import { useStore } from '../store';
 
 export function AddItem() {
+    const [isOpen, setIsOpen] = useState(false);
     const [name, setName] = useState('');
     const [showSuggestions, setShowSuggestions] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -74,6 +75,8 @@ export function AddItem() {
             addItem(parsed.name, undefined, parsed.quantity, parsed.unit);
             setName('');
             setShowSuggestions(false);
+            // Keep input open and re-focus for next item
+            setTimeout(() => inputRef.current?.focus(), 0);
         }
     };
 
@@ -82,6 +85,25 @@ export function AddItem() {
         setShowSuggestions(false);
         inputRef.current?.focus();
     };
+
+    useEffect(() => {
+        if (isOpen && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [isOpen]);
+
+    if (!isOpen) {
+        return (
+            <button
+                onClick={() => setIsOpen(true)}
+                className="fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all active:scale-95 active:bg-orange-600"
+                style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
+                aria-label="Add item"
+            >
+                <Plus size={28} strokeWidth={2.5} />
+            </button>
+        );
+    }
 
     return (
         <form onSubmit={handleSubmit} className="relative z-50 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:bg-zinc-900">
@@ -144,6 +166,14 @@ export function AddItem() {
                     className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all active:scale-95 active:bg-orange-600 disabled:opacity-50 disabled:shadow-none"
                 >
                     <Plus size={24} strokeWidth={2.5} />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => { setIsOpen(false); setName(''); setShowSuggestions(false); }}
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-zinc-600 transition-all active:scale-95 dark:bg-zinc-700 dark:text-zinc-300"
+                    aria-label="Close"
+                >
+                    <X size={24} strokeWidth={2.5} />
                 </button>
             </div>
         </form>

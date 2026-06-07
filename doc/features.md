@@ -6,15 +6,19 @@
 - **Local-First Storage**: Data persists in your browser (saved to `localStorage`) so you never lose your list.
 - **PWA Ready**: Can be installed on mobile/desktop and works offline.
 - **Mobile-First App Layout**:
-    - **Header**: Shows online/offline status.
+    - **Header**: Shows the current list name with a hamburger menu.
+    - **Side Menu**: Access list management, store manager, sync controls, and settings.
     - **Item List**: 
         - **Swipe Right**: Mark as bought (Green check).
         - **Swipe Left**: Delete item (Red trash can).
         - **Left Button**: Tap to toggle bought status.
         - **Quantity Controls**: Adjust item quantities instantly with inline `+` and `-` controls. If the quantity is 1 or empty, the badge hides gracefully but remains accessible by tapping the item name.
         - **Smart Sorting**: Items automatically sort based on the order you last bought them!
-    - **Add Item**: 
-        - Fixed bottom bar for quick entry.
+    - **Add Item (FAB)**: 
+        - A floating action button (orange "+") in the bottom-right corner.
+        - Tap to expand the search/add input bar.
+        - Stays open after adding items so you can add multiple in a row.
+        - Tap the "X" button when done adding.
         - **Autocomplete**: Suggests items from your history as you type.
             - Short (1-2 chars): Start typing to see items beginning with those letters.
             - Long (3+ chars): Matches anywhere in the word.
@@ -25,6 +29,11 @@
         - **No Duplicates**: Adding an item that's already in the "Bought" list simple brings it back to the top. If it's already pending, nothing happens.
     - **Reorder**: Drag and drop items using the grip icon (⋮) to prioritize your list manually.
 - **Shopping Mode**: Bought items move to the bottom and become dimmed.
+- **Supabase Sync**:
+    - Configure via the menu (Sync Setup button or Settings gear icon).
+    - **QR Code Scanner**: Scan a QR code with your device camera to auto-configure sync credentials.
+    - **QR Code Sharing**: Generate a QR code to share your sync config with another device.
+    - Real-time collaboration across devices.
 
 ## How to Run
 1. Open your terminal in `c:\my\projects\tobuy-list`.

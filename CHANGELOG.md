@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.0] - 2026-06-07
+
+### Added
+- **Add Item FAB**: The search input is now hidden by default. A floating orange "+" button (bottom-right) opens it. The input stays open after adding items so you can add multiple in a row. Tap the "X" button when done.
+
 ## [2.4.3] - 2026-06-07
 
 ### Changed

@@ -33,10 +33,15 @@ The app uses a weight-based sorting system. When an item is marked as bought, th
 ## 📁 Project Structure
 ```
 src/
-├── components/     # UI Components (ItemList, StoreManager, etc.)
+├── components/     # UI Components (ItemList, StoreManager, QRScanner, etc.)
 ├── hooks/          # Custom hooks (useGeolocation)
 ├── store.ts        # Zustand store & global state
 ├── types.ts        # TypeScript interfaces
 ├── App.tsx         # Main application entry
 └── main.tsx        # React mounting
 ```
+
+### 5. Sync Credential Sharing
+- **QR Code Generation**: Uses `qrcode.react` to encode Supabase URL + Anon Key as Base64 in a URL hash fragment.
+- **QR Code Scanning**: Uses `html5-qrcode` library to access the device camera (rear-facing preferred) and decode QR codes containing credential URLs.
+- **Credential Parsing**: Extracts `su` and `sk` parameters from the URL hash fragment, Base64-decodes them, and applies via `setSupabaseConfig()`.
