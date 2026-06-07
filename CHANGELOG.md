@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.0] - 2026-06-07
+
+### Added
+- **QR Code Scanner**: Scan a QR code with your device camera to automatically configure Supabase sync credentials. Available in the Sync Setup dialog when unconfigured.
+
 ## [2.3.1] - 2026-02-01
 
 ### Fixed

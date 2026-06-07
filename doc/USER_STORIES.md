@@ -93,6 +93,7 @@ This document outlines the core user stories that define the current feature set
 - **US64:** As a user, I want to manually trigger a sync by tapping the sync button in the header.
 - **US65:** As a user, I want to disconnect from Supabase by pressing a "Disconnect" button in the settings dialog, clearing the stored credentials.
 - **US66:** As a user, I want to share my Supabase configuration with another device by generating a QR code that encodes the Project URL and Anon Key (Base64-encoded in URL parameters).
+- **US66b:** As a user, I want to scan a QR code using my device camera from the Sync Setup dialog to automatically extract and apply Supabase credentials without manual entry.
 - **US67:** As a user, I want to receive a Supabase configuration automatically when I open the app via a shared URL containing `?su=...&sk=...` parameters (Magic Link). The URL parameters should be cleared after applying.
 - **US68:** As a user, I want the app to subscribe to real-time changes only for the currently active list, ignoring events for other lists.
 

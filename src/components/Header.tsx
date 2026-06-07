@@ -1,7 +1,8 @@
-import { ShoppingBag, Menu, RefreshCw, Settings, Check, X, QrCode } from 'lucide-react';
+import { ShoppingBag, Menu, RefreshCw, Settings, Check, X, QrCode, Camera } from 'lucide-react';
 import { useStore } from '../store';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { QRScanner } from './QRScanner';
 import pkg from '../../package.json';
 
 interface HeaderProps {
@@ -15,6 +16,7 @@ export function Header({ onMenuClick, isSettingsOpen, setIsSettingsOpen }: Heade
     const [tempUrl, setTempUrl] = useState(supabaseUrl || '');
     const [tempKey, setTempKey] = useState(supabaseAnonKey || '');
     const [showQR, setShowQR] = useState(false);
+    const [showScanner, setShowScanner] = useState(false);
 
     useEffect(() => {
         if (isSettingsOpen) {
@@ -29,7 +31,27 @@ export function Header({ onMenuClick, isSettingsOpen, setIsSettingsOpen }: Heade
         setSupabaseConfig(tempUrl, tempKey);
         setIsSettingsOpen(false);
         setShowQR(false);
+        setShowScanner(false);
     };
+
+    const handleQRScanSuccess = useCallback((decodedText: string) => {
+        try {
+            const url = new URL(decodedText);
+            const hashParams = new URLSearchParams(url.hash.substring(1));
+            const su = hashParams.get('su');
+            const sk = hashParams.get('sk');
+            if (su && sk) {
+                const decodedUrl = atob(decodeURIComponent(su).replace(/ /g, '+'));
+                const decodedKey = atob(decodeURIComponent(sk).replace(/ /g, '+'));
+                setSupabaseConfig(decodedUrl, decodedKey);
+                setShowScanner(false);
+                setIsSettingsOpen(false);
+                return;
+            }
+        } catch { /* not a valid credential URL */ }
+        setShowScanner(false);
+        alert('Invalid QR code. Please scan a valid Supabase config QR code.');
+    }, [setSupabaseConfig, setIsSettingsOpen]);
 
     const isConfigured = supabaseUrl && supabaseAnonKey;
     const shareUrl = isConfigured ? `https://gianlucacornacchia.github.io/tobuylist/#su=${encodeURIComponent(btoa(supabaseUrl))}&sk=${encodeURIComponent(btoa(supabaseAnonKey))}` : '';
@@ -96,7 +118,7 @@ export function Header({ onMenuClick, isSettingsOpen, setIsSettingsOpen }: Heade
                     <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-zinc-900 overflow-y-auto max-h-[90vh]">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Supabase Sync</h2>
-                            <button onClick={() => { setIsSettingsOpen(false); setShowQR(false); }} className="text-zinc-400 hover:text-zinc-600">
+                            <button onClick={() => { setIsSettingsOpen(false); setShowQR(false); setShowScanner(false); }} className="text-zinc-400 hover:text-zinc-600">
                                 <X size={20} />
                             </button>
                         </div>
@@ -104,8 +126,20 @@ export function Header({ onMenuClick, isSettingsOpen, setIsSettingsOpen }: Heade
                             Configure your Supabase project to share this list.
                         </p>
 
-                        {!showQR && !isConfigured && (
+                        {!showQR && !isConfigured && !showScanner && (
                             <div className="space-y-4 mb-6">
+                            <button
+                                onClick={() => setShowScanner(true)}
+                                className="w-full flex justify-center items-center gap-2 rounded-xl bg-orange-50 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-100 transition-all dark:bg-orange-900/20 dark:text-orange-400"
+                            >
+                                <Camera size={18} />
+                                Scan QR Code
+                            </button>
+                            <div className="flex items-center gap-3">
+                                <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
+                                <span className="text-xs text-zinc-400">or enter manually</span>
+                                <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
+                            </div>
                             <div>
                                 <label className="block text-xs font-medium text-zinc-500 uppercase mb-1 font-bold">Project URL</label>
                                 <input
@@ -126,6 +160,15 @@ export function Header({ onMenuClick, isSettingsOpen, setIsSettingsOpen }: Heade
                                     className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-zinc-800 dark:bg-zinc-800 dark:text-white"
                                 />
                             </div>
+                            </div>
+                        )}
+
+                        {!showQR && !isConfigured && showScanner && (
+                            <div className="mb-6">
+                                <QRScanner
+                                    onScanSuccess={handleQRScanSuccess}
+                                    onClose={() => setShowScanner(false)}
+                                />
                             </div>
                         )}
 
@@ -179,7 +222,7 @@ export function Header({ onMenuClick, isSettingsOpen, setIsSettingsOpen }: Heade
                             >
                                 {showQR ? 'Back' : (isConfigured ? 'Close' : 'Cancel')}
                             </button>
-                            {!showQR && !isConfigured && (
+                            {!showQR && !isConfigured && !showScanner && (
                                 <button
                                     onClick={handleSave}
                                     className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600 active:transform active:scale-95 transition-all"
