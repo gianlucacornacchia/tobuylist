@@ -186,6 +186,7 @@ function App() {
                     isOpen={isMenuOpen}
                     onClose={() => setIsMenuOpen(false)}
                     onNavigate={handleNavigate}
+                    onOpenSettings={() => setIsSettingsOpen(true)}
                 />
                 {currentPage === 'list' ? (
                     <>

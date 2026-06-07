@@ -1,9 +1,8 @@
-import { ShoppingBag, Menu, RefreshCw, Settings, Check, X, QrCode, Camera } from 'lucide-react';
+import { ShoppingBag, Menu, Check, X, QrCode, Camera } from 'lucide-react';
 import { useStore } from '../store';
 import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { QRScanner } from './QRScanner';
-import pkg from '../../package.json';
 
 interface HeaderProps {
     onMenuClick: () => void;
@@ -12,7 +11,7 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick, isSettingsOpen, setIsSettingsOpen }: HeaderProps) {
-    const { supabaseUrl, supabaseAnonKey, setSupabaseConfig, syncWithSupabase, isSyncing, lists, currentListId } = useStore();
+    const { supabaseUrl, supabaseAnonKey, setSupabaseConfig, lists, currentListId } = useStore();
     const [tempUrl, setTempUrl] = useState(supabaseUrl || '');
     const [tempKey, setTempKey] = useState(supabaseAnonKey || '');
     const [showQR, setShowQR] = useState(false);
@@ -72,44 +71,9 @@ export function Header({ onMenuClick, isSettingsOpen, setIsSettingsOpen }: Heade
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
-                            {currentListName} <span className="text-[10px] font-medium text-orange-400 align-top opacity-50 uppercase tracking-widest">
-                                v{pkg.version}
-                            </span>
+                            {currentListName}
                         </h1>
                     </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    {isConfigured ? (
-                        <>
-                            <button
-                                onClick={() => syncWithSupabase()}
-                                disabled={isSyncing}
-                                className={`p-2 rounded-xl transition-all ${isSyncing
-                                    ? 'bg-zinc-100 text-zinc-400 animate-spin dark:bg-zinc-800'
-                                    : 'bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400'
-                                    }`}
-                                title="Sync now"
-                            >
-                                <RefreshCw size={20} />
-                            </button>
-                            <button
-                                onClick={() => setIsSettingsOpen(true)}
-                                className="p-2 rounded-xl text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-all dark:hover:bg-zinc-800"
-                                title="Sharing Settings"
-                            >
-                                <Settings size={20} />
-                            </button>
-                        </>
-                    ) : (
-                        <button
-                            onClick={() => setIsSettingsOpen(true)}
-                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 active:transform active:scale-95"
-                        >
-                            <Settings size={20} />
-                            <span className="text-xs font-bold uppercase tracking-wider">Sync Setup</span>
-                        </button>
-                    )}
                 </div>
             </header>
 

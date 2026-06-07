@@ -1,14 +1,19 @@
-import { X, MapPin } from 'lucide-react';
+import { X, MapPin, RefreshCw, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ListManager } from './ListManager';
+import { useStore } from '../store';
+import pkg from '../../package.json';
 
 interface MenuProps {
     isOpen: boolean;
     onClose: () => void;
     onNavigate: (page: 'stores') => void;
+    onOpenSettings: () => void;
 }
 
-export function Menu({ isOpen, onClose, onNavigate }: MenuProps) {
+export function Menu({ isOpen, onClose, onNavigate, onOpenSettings }: MenuProps) {
+    const { syncWithSupabase, isSyncing, supabaseUrl, supabaseAnonKey } = useStore();
+    const isConfigured = supabaseUrl && supabaseAnonKey;
     return (
         <AnimatePresence>
             {isOpen && (
@@ -43,7 +48,7 @@ export function Menu({ isOpen, onClose, onNavigate }: MenuProps) {
                         </div>
 
                         {/* Menu Items */}
-                        <div className="flex-1 overflow-y-auto p-4">
+                        <div className="flex-1 overflow-y-auto p-4 flex flex-col">
                             <ListManager />
 
                             <div className="my-4 h-px bg-zinc-100 dark:bg-zinc-800" />
@@ -67,6 +72,45 @@ export function Menu({ isOpen, onClose, onNavigate }: MenuProps) {
                                     </div>
                                 </div>
                             </button>
+
+                            <div className="my-4 h-px bg-zinc-100 dark:bg-zinc-800" />
+
+                            {isConfigured ? (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => syncWithSupabase()}
+                                        disabled={isSyncing}
+                                        className={`flex-1 flex items-center justify-center gap-2 rounded-lg p-3 transition-all active:scale-95 ${isSyncing
+                                            ? 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800'
+                                            : 'bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400'
+                                            }`}
+                                    >
+                                        <RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} />
+                                        <span className="text-sm font-semibold">Sync Now</span>
+                                    </button>
+                                    <button
+                                        onClick={() => { onOpenSettings(); onClose(); }}
+                                        className="flex-1 flex items-center justify-center gap-2 rounded-lg p-3 text-zinc-600 hover:bg-zinc-50 transition-all active:scale-95 dark:text-zinc-400 dark:hover:bg-zinc-800/50"
+                                    >
+                                        <Settings size={18} />
+                                        <span className="text-sm font-semibold">Settings</span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => { onOpenSettings(); onClose(); }}
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 p-3 text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 transition-all active:scale-95"
+                                >
+                                    <Settings size={18} />
+                                    <span className="text-sm font-bold uppercase tracking-wider">Sync Setup</span>
+                                </button>
+                            )}
+
+                            <div className="mt-auto pt-4">
+                                <p className="text-center text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
+                                    v{pkg.version}
+                                </p>
+                            </div>
                         </div>
                     </motion.div>
                 </>

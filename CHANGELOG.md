@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.3] - 2026-06-07
+
+### Changed
+- **Menu Buttons**: Made "Sync Now" and "Settings" buttons equal width with matching labels.
+
+## [2.4.2] - 2026-06-07
+
+### Changed
+- **UI Cleanup**: Moved "Sync Now" and "Sharing Settings" buttons from the header to the side menu for a cleaner header layout.
+
+## [2.4.1] - 2026-06-07
+
+### Changed
+- **Version Display**: Moved version string from the header title to the bottom of the menu drawer.
+
 ## [2.4.0] - 2026-06-07
 
 ### Added
